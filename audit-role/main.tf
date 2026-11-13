@@ -56,6 +56,7 @@ resource "aws_iam_role_policy_attachment" "view_only" {
 # Security Hub. Re-check against the upstream file when the pinned Prowler
 # version changes.
 data "aws_iam_policy_document" "prowler_additions" {
+  # checkov:skip=CKV_AWS_356: read-only describe/get actions without resource-level permissions, as in the upstream Prowler policy (see comment on resources below)
   statement {
     sid    = "ProwlerAdditionsReadOnly"
     effect = "Allow"
