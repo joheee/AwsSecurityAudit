@@ -1,0 +1,18 @@
+# Raw scan output holds the account ID and ARNs
+reports/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+tfplan
+*.tfplan
+
+# Secrets and local env
+.env
+.env.*
+!*.example
+*.pem

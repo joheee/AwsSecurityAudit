@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Read-only security-audit role (SecurityAudit, ViewOnlyAccess and Prowler
+  additions). Assumed with MFA. No write actions, no access keys.
+
+Parameters:
+  TrustedPrincipalArn:
+    Type: String
+    Description: IAM user or role ARN of the auditor allowed to assume this role.
+    AllowedPattern: '^arn:aws[a-z-]*:iam::[0-9]{12}:(user|role)/.+$'
+    ConstraintDescription: Must be an IAM user or role ARN.
+  ExternalId:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Optional sts:ExternalId, agreed with the auditor. Leave empty to skip.
+  RoleName:
+    Type: String
+    Default: security-audit
+  MaxSessionDuration:
+    Type: Number
+    Default: 3600
+    MinValue: 3600
+    MaxValue: 43200
+    Description: Maximum session length in seconds.
+
+Conditions:
+  HasExternalId: !Not [!Equals [!Ref ExternalId, ""]]
+
+Resources:
+  AuditRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      Description: Read-only role for the AWS security audit (Prowler, Checkov). Assumed with MFA.
+      MaxSessionDuration: !Ref MaxSessionDuration
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AssumeWithMfa
+            Effect: Allow
+            Principal:
+              AWS: !Ref TrustedPrincipalArn
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: "true"
+              StringEquals: !If
+                - HasExternalId
+                - sts:ExternalId: !Ref ExternalId
+                - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/SecurityAudit
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/job-function/ViewOnlyAccess
+        - !Ref ProwlerAdditionsPolicy
+
+  # Same actions as audit-role/main.tf. Read-only. Resource "*" because these
+  # are account-wide describe/get calls and most do not support resource-level
+  # permissions. securityhub:BatchImportFindings is left out (write action).
+  ProwlerAdditionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${RoleName}-prowler-additions
+      Description: Extra read-only actions for Prowler. No write actions.
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ProwlerAdditionsReadOnly
+            Effect: Allow
+            Resource: "*"
+            Action:
+              - account:Get*
+              - appstream:Describe*
+              - appstream:List*
+              - backup:List*
+              - bedrock:List*
+              - bedrock:Get*
+              - cloudtrail:GetInsightSelectors
+              - codeartifact:List*
+              - codebuild:BatchGet*
+              - cognito-idp:GetUserPoolMfaConfig
+              - dlm:Get*
+              - drs:Describe*
+              - ds:Get*
+              - ds:Describe*
+              - ds:List*
+              - dynamodb:GetResourcePolicy
+              - ec2:GetEbsEncryptionByDefault
+              - ec2:GetInstanceMetadataDefaults
+              - ec2:GetSnapshotBlockPublicAccessState
+              - ecr:Describe*
+              - ecr:GetRegistryScanningConfiguration
+              - elasticfilesystem:DescribeBackupPolicy
+              - glue:GetConnections
+              - glue:GetSecurityConfiguration*
+              - glue:SearchTables
+              - lambda:GetFunction*
+              - logs:FilterLogEvents
+              - macie2:GetMacieSession
+              - macie2:GetAutomatedDiscoveryConfiguration
+              - s3:GetAccountPublicAccessBlock
+              - servicecatalog:Describe*
+              - servicecatalog:List*
+              - shield:DescribeProtection
+              - shield:GetSubscriptionState
+              - ssm:GetDocument
+              - ssm-incidents:List*
+              - states:ListTagsForResource
+              - support:Describe*
+              - tag:GetTagKeys
+              - wellarchitected:List*
+
+Outputs:
+  RoleArn:
+    Description: ARN of the audit role. Send this to the auditor.
+    Value: !GetAtt AuditRole.Arn

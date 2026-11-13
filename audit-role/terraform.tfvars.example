@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+trusted_principal_arn = "arn:aws:iam::123456789012:user/your-admin-user"
+
+# Client accounts only: the auditor and client agree on this value.
+# external_id = "choose-a-long-random-string"
