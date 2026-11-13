@@ -50,25 +50,47 @@ resource "aws_iam_role_policy_attachment" "view_only" {
 }
 
 # Prowler's additions policy: read-only actions that SecurityAudit and
-# ViewOnlyAccess do not cover. Based on Prowler's
-# permissions/prowler-additions-policy.json. securityhub:BatchImportFindings is
-# left out on purpose because it is a write action and we do not send findings
-# to Security Hub. Re-check against the pinned Prowler version when it changes.
+# ViewOnlyAccess do not cover. Copied from Prowler 5.49.0
+# (permissions/prowler-additions-policy.json). securityhub:BatchImportFindings
+# is left out on purpose: it is a write action and we do not send findings to
+# Security Hub. Re-check against the upstream file when the pinned Prowler
+# version changes.
 data "aws_iam_policy_document" "prowler_additions" {
   statement {
     sid    = "ProwlerAdditionsReadOnly"
     effect = "Allow"
     actions = [
       "account:Get*",
+      "amplify:ListApps",
+      "amplify:ListBranches",
       "appstream:Describe*",
       "appstream:List*",
       "backup:List*",
+      "backup:Get*",
+      "bedrock-agentcore:GetAgentRuntime",
+      "bedrock-agentcore:GetBrowser",
+      "bedrock-agentcore:GetCodeInterpreter",
+      "bedrock-agentcore:GetGateway",
+      "bedrock-agentcore:GetGatewayTarget",
+      "bedrock-agentcore:GetMemory",
+      "bedrock-agentcore:GetTokenVault",
+      "bedrock-agentcore:ListAgentRuntimes",
+      "bedrock-agentcore:ListBrowsers",
+      "bedrock-agentcore:ListCodeInterpreters",
+      "bedrock-agentcore:ListGatewayTargets",
+      "bedrock-agentcore:ListGateways",
+      "bedrock-agentcore:ListMemories",
+      "bedrock-agentcore:ListTagsForResource",
       "bedrock:List*",
       "bedrock:Get*",
       "cloudtrail:GetInsightSelectors",
       "codeartifact:List*",
       "codebuild:BatchGet*",
+      "codebuild:ListReportGroups",
       "cognito-idp:GetUserPoolMfaConfig",
+      "datapipeline:DescribePipelines",
+      "datapipeline:GetPipelineDefinition",
+      "datapipeline:ListPipelines",
       "dlm:Get*",
       "drs:Describe*",
       "ds:Get*",
@@ -76,23 +98,38 @@ data "aws_iam_policy_document" "prowler_additions" {
       "ds:List*",
       "dynamodb:GetResourcePolicy",
       "ec2:GetEbsEncryptionByDefault",
-      "ec2:GetInstanceMetadataDefaults",
       "ec2:GetSnapshotBlockPublicAccessState",
+      "ec2:GetInstanceMetadataDefaults",
       "ecr:Describe*",
       "ecr:GetRegistryScanningConfiguration",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
       "elasticfilesystem:DescribeBackupPolicy",
       "glue:GetConnections",
       "glue:GetSecurityConfiguration*",
       "glue:SearchTables",
+      "glue:GetMLTransforms",
+      "inspector2:BatchGetFindingDetails",
+      "inspector2:SearchVulnerabilities",
       "lambda:GetFunction*",
+      "lambda:GetLayerVersion",
       "logs:FilterLogEvents",
+      "lightsail:GetRelationalDatabases",
       "macie2:GetMacieSession",
       "macie2:GetAutomatedDiscoveryConfiguration",
+      "oam:GetSinkPolicy",
+      "oam:ListTagsForResource",
+      "rolesanywhere:ListProfiles",
+      "rolesanywhere:ListTagsForResource",
+      "rolesanywhere:ListTrustAnchors",
       "s3:GetAccountPublicAccessBlock",
-      "servicecatalog:Describe*",
-      "servicecatalog:List*",
+      "s3:GetObjectAcl",
+      "s3:ListBucket",
       "shield:DescribeProtection",
       "shield:GetSubscriptionState",
+      "securityhub:GetFindings",
+      "servicecatalog:Describe*",
+      "servicecatalog:List*",
       "ssm:GetDocument",
       "ssm-incidents:List*",
       "states:ListTagsForResource",
@@ -101,8 +138,23 @@ data "aws_iam_policy_document" "prowler_additions" {
       "wellarchitected:List*",
     ]
     # "*": these are account-wide describe/get calls and most of them do not
-    # support resource-level permissions. All actions are read-only.
+    # support resource-level permissions. All actions are read-only. Note that
+    # ecr:BatchGetImage, ecr:GetDownloadUrlForLayer and lambda:GetLayerVersion
+    # can download image and layer content, not only metadata.
     resources = ["*"]
+  }
+
+  statement {
+    sid     = "ProwlerAdditionsApiGatewayRead"
+    effect  = "Allow"
+    actions = ["apigateway:GET"]
+    # Scoped to API Gateway REST, HTTP and domain name resources, as upstream.
+    resources = [
+      "arn:*:apigateway:*::/restapis/*",
+      "arn:*:apigateway:*::/apis/*",
+      "arn:*:apigateway:*::/domainnames",
+      "arn:*:apigateway:*::/domainnames/*",
+    ]
   }
 }
 

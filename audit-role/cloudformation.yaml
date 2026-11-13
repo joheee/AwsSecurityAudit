@@ -54,9 +54,11 @@ Resources:
         - !Sub arn:${AWS::Partition}:iam::aws:policy/job-function/ViewOnlyAccess
         - !Ref ProwlerAdditionsPolicy
 
-  # Same actions as audit-role/main.tf. Read-only. Resource "*" because these
-  # are account-wide describe/get calls and most do not support resource-level
-  # permissions. securityhub:BatchImportFindings is left out (write action).
+  # Same actions as audit-role/main.tf (Prowler 5.49.0 additions, read-only).
+  # Resource "*" because these are account-wide describe/get calls and most do
+  # not support resource-level permissions. securityhub:BatchImportFindings is
+  # left out (write action). ecr:BatchGetImage, ecr:GetDownloadUrlForLayer and
+  # lambda:GetLayerVersion can download image and layer content.
   ProwlerAdditionsPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -70,15 +72,36 @@ Resources:
             Resource: "*"
             Action:
               - account:Get*
+              - amplify:ListApps
+              - amplify:ListBranches
               - appstream:Describe*
               - appstream:List*
               - backup:List*
+              - backup:Get*
+              - bedrock-agentcore:GetAgentRuntime
+              - bedrock-agentcore:GetBrowser
+              - bedrock-agentcore:GetCodeInterpreter
+              - bedrock-agentcore:GetGateway
+              - bedrock-agentcore:GetGatewayTarget
+              - bedrock-agentcore:GetMemory
+              - bedrock-agentcore:GetTokenVault
+              - bedrock-agentcore:ListAgentRuntimes
+              - bedrock-agentcore:ListBrowsers
+              - bedrock-agentcore:ListCodeInterpreters
+              - bedrock-agentcore:ListGatewayTargets
+              - bedrock-agentcore:ListGateways
+              - bedrock-agentcore:ListMemories
+              - bedrock-agentcore:ListTagsForResource
               - bedrock:List*
               - bedrock:Get*
               - cloudtrail:GetInsightSelectors
               - codeartifact:List*
               - codebuild:BatchGet*
+              - codebuild:ListReportGroups
               - cognito-idp:GetUserPoolMfaConfig
+              - datapipeline:DescribePipelines
+              - datapipeline:GetPipelineDefinition
+              - datapipeline:ListPipelines
               - dlm:Get*
               - drs:Describe*
               - ds:Get*
@@ -86,29 +109,53 @@ Resources:
               - ds:List*
               - dynamodb:GetResourcePolicy
               - ec2:GetEbsEncryptionByDefault
-              - ec2:GetInstanceMetadataDefaults
               - ec2:GetSnapshotBlockPublicAccessState
+              - ec2:GetInstanceMetadataDefaults
               - ecr:Describe*
               - ecr:GetRegistryScanningConfiguration
+              - ecr:BatchGetImage
+              - ecr:GetDownloadUrlForLayer
               - elasticfilesystem:DescribeBackupPolicy
               - glue:GetConnections
               - glue:GetSecurityConfiguration*
               - glue:SearchTables
+              - glue:GetMLTransforms
+              - inspector2:BatchGetFindingDetails
+              - inspector2:SearchVulnerabilities
               - lambda:GetFunction*
+              - lambda:GetLayerVersion
               - logs:FilterLogEvents
+              - lightsail:GetRelationalDatabases
               - macie2:GetMacieSession
               - macie2:GetAutomatedDiscoveryConfiguration
+              - oam:GetSinkPolicy
+              - oam:ListTagsForResource
+              - rolesanywhere:ListProfiles
+              - rolesanywhere:ListTagsForResource
+              - rolesanywhere:ListTrustAnchors
               - s3:GetAccountPublicAccessBlock
-              - servicecatalog:Describe*
-              - servicecatalog:List*
+              - s3:GetObjectAcl
+              - s3:ListBucket
               - shield:DescribeProtection
               - shield:GetSubscriptionState
+              - securityhub:GetFindings
+              - servicecatalog:Describe*
+              - servicecatalog:List*
               - ssm:GetDocument
               - ssm-incidents:List*
               - states:ListTagsForResource
               - support:Describe*
               - tag:GetTagKeys
               - wellarchitected:List*
+          - Sid: ProwlerAdditionsApiGatewayRead
+            Effect: Allow
+            Action:
+              - apigateway:GET
+            Resource:
+              - "arn:*:apigateway:*::/restapis/*"
+              - "arn:*:apigateway:*::/apis/*"
+              - "arn:*:apigateway:*::/domainnames"
+              - "arn:*:apigateway:*::/domainnames/*"
 
 Outputs:
   RoleArn:
