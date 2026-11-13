@@ -26,7 +26,11 @@ second scan" story clearer.
 - `audit-role/`: Terraform for the read-only `security-audit` role
   (`main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`) and
   `cloudformation.yaml` with the same role for clients. Local state is fine;
-  it is one role.
+  it is one role. `terraform.tfvars` (git-ignored) holds the trusted principal
+  ARN; `terraform.tfvars.example` is the template. The Prowler additions policy
+  is copied from upstream (5.49.0) minus `securityhub:BatchImportFindings`; keep
+  the Terraform and CloudFormation action lists identical and re-diff against
+  upstream when the Prowler pin changes.
 - `scans/`: `prowler.sh` (AWS scan, region `ap-southeast-2`, CIS plus all
   checks, CSV, JSON-OCSF and HTML) and `checkov.sh` (directory, plan JSON and
   `github_actions`; JSON, SARIF and CLI text). Both take `--label` and the
@@ -35,7 +39,8 @@ second scan" story clearer.
   and ARNs.
 - `report/`: `audit-report.md`, the PDF, `TEMPLATE.md` and redacted excerpts.
 - `.github/workflows/checks.yml`: shellcheck, actionlint, `terraform fmt
-  -check`, `validate`, tflint and Checkov on this repo. No AWS access.
+  -check`, `validate`, tflint, cfn-lint and Checkov on this repo. No AWS
+  access. Actions pinned by SHA, tools by image digest or version.
 
 ## Working rules
 
@@ -73,10 +78,30 @@ second scan" story clearer.
   trailer. Ask before committing or pushing. Push to `main`.
 - Tick the boxes in the GOALS.md "Definition of done" as items are finished.
 
+## Pinned versions (keep in sync with the scripts and the workflow)
+
+- Prowler 5.49.0 (`prowlercloud/prowler`, digest in `scans/prowler.sh`), CIS
+  framework `cis_7.0_aws` (provisional, confirm before the baseline).
+- Checkov 3.4.5 (`bridgecrew/checkov`, digest in `scans/checkov.sh` and
+  `checks.yml`).
+- Terraform 1.15.9 in CI, `>= 1.10` in `versions.tf`, AWS provider `~> 6.0`.
+- tflint 0.64.0, cfn-lint 1.60.1, ShellCheck 0.11.0, actionlint 1.7.12.
+- Changing any Prowler or Checkov pin means re-running both before and after.
+
 ## Notes
 
 - Checkov open source shows no severities without a Prisma Cloud API key. Rate
   Checkov findings from the matching Prowler check or by hand, and say which.
+- Checkov on project 1 at `7dc21e5` (measured with 3.4.5): Terraform 195
+  passed, 18 failed; GitHub Actions 118 passed, 2 failed (the 2 are not in
+  project 1's README). Plan JSON is not run yet.
+- Checkov on this repo is a hard gate. The only skip is `CKV_AWS_356` on the
+  Prowler additions policy (read-only `"*"`), inline with a reason. Add other
+  skips the same way, never in a global config.
+- `ecr:BatchGetImage`, `ecr:GetDownloadUrlForLayer` and `lambda:GetLayerVersion`
+  in the additions policy can download content, not only metadata. Mention this
+  in the client onboarding notes.
+- Commit trailer: this file wins over any tool default. No Co-Authored-By.
 - Project 1's README already triages 18 Checkov findings (195 passed). Start
   from that list; the audit should add the live account view, severities and
   proof of the fixes, not repeat it.

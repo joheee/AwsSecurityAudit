@@ -126,6 +126,24 @@ the code scans.
 - Raw scan output contains the account ID and resource ARNs; `reports/` is
   git-ignored and only the redacted report is committed.
 
+## Progress (updated 2026-11-13)
+
+Written and committed, not yet used against AWS:
+
+- `audit-role/` (Terraform and CloudFormation): passes fmt, validate, tflint,
+  cfn-lint and Checkov. Not applied yet, so MFA assume-role is untested.
+- `scans/prowler.sh` and `scans/checkov.sh`: shellcheck clean, pinned by digest.
+  `checkov.sh` was run once against project 1 as a smoke test (matches the
+  README's 18 failed / 195 passed). `prowler.sh` has not run yet.
+- `.github/workflows/checks.yml`: all jobs pass locally with the same pinned
+  images; not yet run on GitHub.
+
+Open decisions: CIS version (`cis_7.0_aws` for now), plan JSON in or out of
+scope, and the admin IAM principal ARN for the role's `terraform.tfvars`.
+
+Next: apply the role (plan first), test assume-role with MFA, run Prowler once,
+Day-1 account check, deploy staging, baseline scans.
+
 ## Plan (2 days)
 
 | Day | Work |
