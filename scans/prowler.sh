@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Prowler AWS scan: CIS benchmark plus all checks, region ap-southeast-2.
+# Prowler AWS scan: all AWS checks, region ap-southeast-2. Each finding carries
+# its CIS mapping in the COMPLIANCE column. Do not add --compliance: it limits
+# the run to the checks of that one framework (82 of 675 checks for CIS 7.0).
 # Output (CSV, JSON-OCSF, HTML) goes to reports/<date>-<label>/prowler/.
 #
 # Usage: scans/prowler.sh --label before --project ../AwsEcsFoundationTerraform
@@ -54,7 +56,6 @@ cmd=(docker run --rm
   "$PROWLER_IMAGE"
   aws
   --region "$REGION"
-  --compliance "$CIS_FRAMEWORK"
   --output-formats csv json-ocsf html
   --output-directory /out
   --output-filename prowler
@@ -67,7 +68,7 @@ cmd=(docker run --rm
   echo "date: $date_str"
   echo "label: $label"
   echo "region: $REGION"
-  echo "compliance: $CIS_FRAMEWORK (plus all checks)"
+  echo "scope: all AWS checks (no --compliance flag; it would limit the run to one framework). CIS mapping: $CIS_FRAMEWORK, read from the COMPLIANCE column"
   echo "project_1_commit: $project_commit (uncommitted changes: $project_dirty files)"
   echo "command: ${cmd[*]}"
 } > "$out_dir/meta.txt"
