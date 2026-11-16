@@ -126,27 +126,49 @@ the code scans.
 - Raw scan output contains the account ID and resource ARNs; `reports/` is
   git-ignored and only the redacted report is committed.
 
-## Progress (updated 2026-11-13)
+## Progress (updated 2026-11-17)
 
-Written and committed, not yet used against AWS:
+Done:
 
-- `audit-role/` (Terraform and CloudFormation): passes fmt, validate, tflint,
-  cfn-lint and Checkov. Not applied yet, so MFA assume-role is untested.
-- `scans/prowler.sh` and `scans/checkov.sh`: shellcheck clean, pinned by digest.
-  `checkov.sh` was run once against project 1 as a smoke test (matches the
-  README's 18 failed / 195 passed). `prowler.sh` has not run yet.
-- `.github/workflows/checks.yml`: all jobs pass locally with the same pinned
-  images; not yet run on GitHub.
+- `audit-role/` (Terraform) is applied. Assume-role with MFA works and the
+  read-only boundary is confirmed (`iam:CreateUser` is denied). The
+  CloudFormation copy is only linted, not deployed, and the external ID path is
+  untested.
+- `scans/prowler.sh` has run twice as smoke scans (not the baseline). The first
+  used `--compliance cis_7.0_aws`, which limited it to 82 checks, so the flag
+  was removed: `smoke2` ran 668 of 675 checks in 4:32 and kept the CIS mapping
+  (the `COMPLIANCE` column and `compliance/prowler_cis_7.0_aws.csv`).
+- `scans/checkov.sh` matches project 1's README (18 failed / 195 passed).
+- `.github/workflows/checks.yml` passes locally; not yet run on GitHub.
+- `README.md` is drafted, with the results table left as pending.
+- Decided: CIS `cis_7.0_aws` is a mapping only; try plan JSON, and drop it for
+  both before and after if it is awkward.
+- Project 1 staging plan (read-only, nothing applied): 50 to add, 0 to change,
+  0 to destroy.
 
-Update 2026-11-17: the audit role is applied and assume-role with MFA works
-(read-only boundary confirmed). `prowler.sh` ran twice as smoke tests; the
-first used `--compliance`, which limited it to 82 checks, so the flag was
-removed and `smoke2` ran 668 of 675 checks in 4:32. Decided: CIS `cis_7.0_aws`
-(mapping only), and try plan JSON, dropping it for both before and after if it
-is awkward.
+Found along the way:
 
-Next: Day-1 account check, prepare and plan staging in project 1 (no apply
-without asking), baseline scans (try plan JSON), triage.
+- The GitHub OIDC provider was missing from the account, although both repos
+  assumed it exists (project 4 probably removed it). The plan failed on it. It
+  was recreated by hand, so it now has no Terraform owner. Mention it in the
+  report as a cross-project dependency.
+- The `ecs-foundation-prod-final` RDS snapshot still exists. Decide whether to
+  keep it before the audit ends; do not delete it unasked.
+- `smoke2` account-level results (smoke, not the baseline): 94 failed, 143
+  passed, 6 manual; fails are 1 critical, 15 high, 52 medium, 26 low.
+  Project 1's own high finding is the `terraform-apply` inline policy on the
+  prod and staging apply roles (privilege escalation). The rest (admin policy
+  on the `cloud-engineer` group, no CloudTrail trail, no account S3 public
+  access block, no MFA on a demo user, long-lived keys) is account-level and
+  belongs in the separate section. Empty `permission-errors.txt` does not prove
+  the SCP caused no errors; re-check once staging runs.
+
+Open: Day-1 check of whether the org manages CloudTrail, GuardDuty or Security
+Hub centrally; where staging is deployed from (local apply or the workflow);
+what to do with the prod snapshot.
+
+Next: export the plan JSON, apply staging after approval, baseline scans
+(`--label before`), triage, fixes, after scans, report, destroy staging.
 
 ## Plan (2 days)
 

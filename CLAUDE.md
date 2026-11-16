@@ -18,8 +18,9 @@ second scan" story clearer.
   `ec2:DescribeInstances`; Prowler checks that need it will error. Report them
   as "could not evaluate", never as passed, and don't try to work around the
   SCP.
-- The GitHub OIDC provider already exists in the account; reuse it with a data
-  source if a workflow needs AWS, don't create another.
+- The GitHub OIDC provider is looked up with a data source, never created here.
+  It was missing on 2026-11-17 and was recreated by hand; check it exists
+  before planning project 1 (`aws iam list-open-id-connect-providers`).
 
 ## Layout
 
@@ -112,3 +113,19 @@ second scan" story clearer.
   than FAIL. Collect those for the "could not evaluate" section.
 - Use `--resource-tags project=<project 1 value>` only for a focused re-check.
   The main scans cover the whole region so account-level findings show up.
+- Never add `--compliance` to `prowler.sh`: it limits the run to that
+  framework (82 of 675 checks for CIS 7.0). CIS is read from the `COMPLIANCE`
+  column and `compliance/prowler_cis_7.0_aws.csv`.
+- Session flow: `aws login` as the admin user, assume `security-audit` with MFA
+  (serial and code), export the three variables, run the scan, `unset` them.
+  An assume-role session lasts one hour; a full scan took 4:32 on an empty
+  account.
+- Project 1 deploys staging from its own repo: init with
+  `-backend-config=envs/staging.backend.hcl`, plan with
+  `-var-file=envs/staging.tfvars`. Its CI roles survive a destroy by design, so
+  the apply roles appear in every Prowler scan. Save plans outside both repos
+  or in git-ignored `reports/`; they contain the account ID.
+- Account-level findings (admin policy on a group, CloudTrail, S3 account block,
+  users without MFA) are reported separately from project 1's own findings.
+- The `ecs-foundation-prod-final` snapshot existed on 2026-11-17. Do not delete
+  it without asking.
