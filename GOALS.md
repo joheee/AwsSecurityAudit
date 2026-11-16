@@ -138,11 +138,15 @@ Written and committed, not yet used against AWS:
 - `.github/workflows/checks.yml`: all jobs pass locally with the same pinned
   images; not yet run on GitHub.
 
-Open decisions: CIS version (`cis_7.0_aws` for now), plan JSON in or out of
-scope, and the admin IAM principal ARN for the role's `terraform.tfvars`.
+Update 2026-11-17: the audit role is applied and assume-role with MFA works
+(read-only boundary confirmed). `prowler.sh` ran twice as smoke tests; the
+first used `--compliance`, which limited it to 82 checks, so the flag was
+removed and `smoke2` ran 668 of 675 checks in 4:32. Decided: CIS `cis_7.0_aws`
+(mapping only), and try plan JSON, dropping it for both before and after if it
+is awkward.
 
-Next: apply the role (plan first), test assume-role with MFA, run Prowler once,
-Day-1 account check, deploy staging, baseline scans.
+Next: Day-1 account check, prepare and plan staging in project 1 (no apply
+without asking), baseline scans (try plan JSON), triage.
 
 ## Plan (2 days)
 

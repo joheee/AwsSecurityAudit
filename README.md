@@ -117,7 +117,7 @@ Only the redacted report is committed.
 |---|---|
 | Prowler | 5.49.0 (image pinned by digest) |
 | Checkov | 3.4.5 (image pinned by digest) |
-| CIS framework | `cis_7.0_aws` (provisional, to be confirmed before the baseline) |
+| CIS framework | `cis_7.0_aws` (the CIS mapping of each finding; all checks run) |
 | Terraform | `>= 1.10`, AWS provider `~> 6.0` |
 
 ## Results

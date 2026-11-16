@@ -81,7 +81,8 @@ second scan" story clearer.
 ## Pinned versions (keep in sync with the scripts and the workflow)
 
 - Prowler 5.49.0 (`prowlercloud/prowler`, digest in `scans/prowler.sh`), CIS
-  framework `cis_7.0_aws` (provisional, confirm before the baseline).
+  framework `cis_7.0_aws` (decided 2026-11-17; all 675 checks run, CIS is the mapping, not
+  a filter: never add `--compliance`).
 - Checkov 3.4.5 (`bridgecrew/checkov`, digest in `scans/checkov.sh` and
   `checks.yml`).
 - Terraform 1.15.9 in CI, `>= 1.10` in `versions.tf`, AWS provider `~> 6.0`.
@@ -94,7 +95,9 @@ second scan" story clearer.
   Checkov findings from the matching Prowler check or by hand, and say which.
 - Checkov on project 1 at `7dc21e5` (measured with 3.4.5): Terraform 195
   passed, 18 failed; GitHub Actions 118 passed, 2 failed (the 2 are not in
-  project 1's README). Plan JSON is not run yet.
+  project 1's README). Plan JSON: decided 2026-11-17 to try it
+  during staging setup; if it is awkward, drop it for both before and after and
+  say so in the report limits.
 - Checkov on this repo is a hard gate. The only skip is `CKV_AWS_356` on the
   Prowler additions policy (read-only `"*"`), inline with a reason. Add other
   skips the same way, never in a global config.
