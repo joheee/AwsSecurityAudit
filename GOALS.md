@@ -113,9 +113,10 @@ the code scans.
 
 ## Constraints
 
-- Region `ap-southeast-2` only (org SCP). The SCP also denies
-  `ec2:DescribeInstances`, so some Prowler EC2 checks error; report them as
-  "could not evaluate".
+- Region `ap-southeast-2` only (org SCP). The SCP was believed to deny
+  `ec2:DescribeInstances`; on 2026-11-18 it succeeded as the admin user (not
+  tested as the audit role). Report what is observed, and list checks that
+  error as "could not evaluate".
 - The org may manage CloudTrail, GuardDuty or Security Hub centrally. Check
   on day 1 and report what the account can't see or change.
 - Cost: the scans are free. Project 1 staging costs about $93 a month, so
@@ -126,7 +127,7 @@ the code scans.
 - Raw scan output contains the account ID and resource ARNs; `reports/` is
   git-ignored and only the redacted report is committed.
 
-## Progress (updated 2026-11-17)
+## Progress (updated 2026-11-18)
 
 Done:
 
@@ -134,42 +135,79 @@ Done:
   read-only boundary is confirmed (`iam:CreateUser` is denied). The
   CloudFormation copy is only linted, not deployed, and the external ID path is
   untested.
-- `scans/prowler.sh` has run twice as smoke scans (not the baseline). The first
-  used `--compliance cis_7.0_aws`, which limited it to 82 checks, so the flag
-  was removed: `smoke2` ran 668 of 675 checks in 4:32 and kept the CIS mapping
-  (the `COMPLIANCE` column and `compliance/prowler_cis_7.0_aws.csv`).
-- `scans/checkov.sh` matches project 1's README (18 failed / 195 passed).
-- `.github/workflows/checks.yml` is green on GitHub (runs #1 to #5, last on
-  `3680482`).
-- `README.md` is drafted, with the results table left as pending.
-- Decided: CIS `cis_7.0_aws` is a mapping only; try plan JSON, and drop it for
-  both before and after if it is awkward.
-- Project 1 staging plan (read-only, nothing applied): 50 to add, 0 to change,
-  0 to destroy.
+- Both scan scripts work. CIS `cis_7.0_aws` is a mapping only (never
+  `--compliance`). `checks.yml` is green.
+- Staging of project 1 is deployed (it was applied after 2026-11-17 15:39) and
+  **is still running and costing money**. A full staging plan says "No changes".
+- Baseline scans saved in `reports/2026-11-18-baseline/` (git-ignored), all at
+  project 1 `6a87780` (docs-only on top of `7dc21e5`, 0 uncommitted files):
+  - Checkov 3.4.5: Terraform 195 passed / 18 failed; GitHub Actions 118 / 2;
+    plan JSON 152 / 20 (plan is a no-op against deployed staging; plan JSON
+    works, so keep it for the after scan).
+  - Prowler 5.49.0, 668 checks executed: 126 FAIL (1 critical, 23 high,
+    72 medium, 30 low), 270 PASS, 6 MANUAL. 25 FAIL rows are project 1's own
+    resources, 9 are its hand-made state bucket, the rest are account level or
+    other projects. Raw output and the plan JSON are in `reports/`; the plan
+    files `baseline.tfplan`, `baseline-plan.json` and `apply-scope.tfplan` hold
+    the account ID, so they stay there.
+- `report/checkov-triage-draft.md` (untracked until committed) has the Checkov
+  triage and the Prowler triage with proposed buckets. Prowler severities are
+  used where a Checkov check has a matching Prowler check.
+- First fix done in project 1: commit `3c792fb` limits the staging apply
+  role's IAM writes to this environment's three service roles (closes the
+  intent of Prowler `iam_inline_policy_allows_privilege_escalation`, no Checkov
+  check). Applied locally to staging with `-target=aws_iam_role_policy.apply`;
+  a full plan afterwards says no changes. Not pushed, not yet tested through
+  the workflow, and the prod apply role still has the old broad policy. The
+  after scan decides whether Prowler still flags it.
 
 Found along the way:
 
-- The GitHub OIDC provider was missing from the account, although both repos
-  assumed it exists (project 4 probably removed it). The plan failed on it. It
-  was recreated by hand, so it now has no Terraform owner. Mention it in the
-  report as a cross-project dependency.
-- The `ecs-foundation-prod-final` RDS snapshot still exists. Decide whether to
-  keep it before the audit ends; do not delete it unasked.
-- `smoke2` account-level results (smoke, not the baseline): 94 failed, 143
-  passed, 6 manual; fails are 1 critical, 15 high, 52 medium, 26 low.
-  Project 1's own high finding is the `terraform-apply` inline policy on the
-  prod and staging apply roles (privilege escalation). The rest (admin policy
-  on the `cloud-engineer` group, no CloudTrail trail, no account S3 public
-  access block, no MFA on a demo user, long-lived keys) is account-level and
-  belongs in the separate section. Empty `permission-errors.txt` does not prove
-  the SCP caused no errors; re-check once staging runs.
+- The GitHub OIDC provider was missing from the account on 2026-11-17 and was
+  recreated by hand, so it has no Terraform owner (exists as of 2026-11-18).
+  Mention it in the report as a cross-project dependency.
+- The `ecs-foundation-prod-final` RDS snapshot still exists. Do not delete it
+  unasked.
+- `ec2:DescribeInstances`: the admin user got 0 reservations on 2026-11-18, so
+  it was not denied there, and the account has no EC2 instances. Prowler has no
+  `ec2_instance_*` rows. Not tested as the `security-audit` role. Word the
+  report as observed, not as "blocked by the SCP".
+- 2 Prowler rows are `us-east-1`: Trusted Advisor, which is served from there.
+- Apply role finding root cause: `name_prefix` is `ecs-foundation-*`, so the
+  apply role could rewrite itself and the other environment's apply role.
+- A prod container-insights log group (`/aws/ecs/containerinsights/ecs-foundation-prod/...`)
+  shows up in the findings although prod is not deployed. Probably a leftover.
+  Confirm.
+- Project 1's README triages CKV_AWS_336 as accepted; the plan is to fix it
+  later instead (`readonlyRootFilesystem` plus tmpfs for nginx). The report
+  must say it differs.
 
-Open: Day-1 check of whether the org manages CloudTrail, GuardDuty or Security
-Hub centrally; where staging is deployed from (local apply or the workflow);
-what to do with the prod snapshot.
+Open: the day-1 check of whether the org manages CloudTrail, GuardDuty or
+Security Hub centrally; where staging was deployed from (local or workflow);
+what to do with the prod snapshot; whether the account-level S3 public access
+block and IAM password policy are in scope as fixes or report-only; which VPC
+the 2 failing network ACLs and the network-firewall finding belong to; RDS
+backup retention, engine version and the managed-secret policy (all marked "to
+confirm" in the draft).
 
-Next: export the plan JSON, apply staging after approval, baseline scans
-(`--label before`), triage, fixes, after scans, report, destroy staging.
+Next, in order:
+
+1. Push project 1 commit `3c792fb` (ask first) and test the narrowed apply
+   role with a staging plan from the workflow. Decide on the prod apply role
+   (local prod apply of that one policy, ask first).
+2. Remaining fixes, one commit per check ID in project 1, each applied to
+   staging: confused-deputy conditions on the three staging roles; CKV_AWS_129,
+   CKV2_AWS_30, CKV_AWS_118 (add the monitoring role name to
+   `service_role_arns` in the same change), CKV_AWS_91; GitHub Actions pinned
+   to commit SHAs (hand-found, no check ID).
+3. Finish the triage (resolve the "to confirm" rows, diff the plan failures
+   against the directory failures).
+4. After scans with the same commands and versions (label `after`, same
+   `--plan-json` approach), before/after table, report, PDF, `TEMPLATE.md`,
+   README results.
+5. Destroy staging the same day the after scans finish. It has been running
+   since 2026-11-17, about $3 a day. Check the `ecs-foundation-prod-final`
+   snapshot decision first.
 
 ## Plan (2 days)
 
@@ -190,7 +228,7 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 
 - [x] `audit-role/` creates a read-only `security-audit` role (SecurityAudit, ViewOnlyAccess, Prowler additions) that needs MFA; CloudFormation copy included. _(Terraform applied; MFA assume-role works and `iam:CreateUser` is denied. The CloudFormation copy is linted, not deployed)_
 - [x] `scans/prowler.sh` and `scans/checkov.sh` run with pinned image digests and write to `reports/<date>-<label>/`. _(Prowler smoke scan `smoke2`: 668 of 675 checks in 4:32; Checkov matches project 1's README, 18 failed / 195 passed)_
-- [ ] Baseline scans saved for project 1 at a named commit, with counts by severity.
+- [x] Baseline scans saved for project 1 at a named commit, with counts by severity. _(`reports/2026-11-18-baseline/`, project 1 `6a87780`. Prowler has severities; Checkov has pass/fail counts only)_
 - [ ] Every failed finding is triaged: fix now, fix later, accepted risk (with reason) or could not evaluate (with reason).
 - [ ] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo.
 - [ ] After scans saved; the report has a before/after table by severity for each tool.

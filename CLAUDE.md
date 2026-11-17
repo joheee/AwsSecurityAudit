@@ -14,10 +14,11 @@ second scan" story clearer.
 - The fixes themselves are made in the project 1 repo (its CLAUDE.md rules
   apply there). This repo holds the audit role, the scan scripts and the
   report.
-- Region `ap-southeast-2` only (org SCP). The SCP also denies
-  `ec2:DescribeInstances`; Prowler checks that need it will error. Report them
-  as "could not evaluate", never as passed, and don't try to work around the
-  SCP.
+- Region `ap-southeast-2` only (org SCP). The SCP was believed to deny
+  `ec2:DescribeInstances`, but the call succeeded as the admin user on
+  2026-11-18 (0 instances; not tested as the audit role). Report what is
+  observed. Checks that error are "could not evaluate", never passed; don't try
+  to work around the SCP.
 - The GitHub OIDC provider is looked up with a data source, never created here.
   It was missing on 2026-11-17 and was recreated by hand; check it exists
   before planning project 1 (`aws iam list-open-id-connect-providers`).
@@ -129,3 +130,20 @@ second scan" story clearer.
   users without MFA) are reported separately from project 1's own findings.
 - The `ecs-foundation-prod-final` snapshot existed on 2026-11-17. Do not delete
   it without asking.
+- State on 2026-11-18: baseline scans are in `reports/2026-11-18-baseline/`
+  (project 1 `6a87780`; Checkov 195/18, 118/2, plan 152/20; Prowler 126 FAIL:
+  1 critical, 23 high, 72 medium, 30 low). Plan JSON works, keep it for the
+  after scan. Staging of project 1 is deployed and still costing money: destroy
+  it the day the after scans finish. `GOALS.md` "Next" lists the order of work.
+- Each `!` command in a Claude Code session runs in its own shell, so exported
+  AWS variables do not reach later commands. Run the Prowler scan in the same
+  shell, with the variables set inline on the `scans/prowler.sh` line, or run
+  it from your own terminal. The MFA code lasts about 30 seconds and works
+  once. Never ask for the credentials in chat.
+- Project 1 commit `3c792fb` (not pushed) limits the apply role's IAM writes to
+  the environment's three service roles. Project 1 apply roles are changed
+  locally with `-target=aws_iam_role_policy.apply`, not from CI. The prod apply
+  role still has the old policy. Any new project 1 service role must be added to
+  `service_role_arns` in project 1 `main.tf`, or its apply is denied.
+- `report/checkov-triage-draft.md` holds the triage with proposed buckets.
+  Only the items listed under its "Decisions" are decided.
