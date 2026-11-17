@@ -9,8 +9,8 @@ The target is my own working stack,
 (VPC, ECS Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC, in
 `ap-southeast-2`). The findings and the fixes are real.
 
-> **Status: in progress.** The audit role and the scan scripts are written. The
-> baseline scan, the fixes, the after scan and the report are not done yet, so
+> **Status: in progress.** The audit role is applied (MFA assume-role tested)
+> and both scan scripts have run as smoke tests. The baseline scan, the fixes, the after scan and the report are not done yet, so
 > the results section below is empty on purpose. Nothing in this README is a
 > measured result unless a saved scan backs it.
 

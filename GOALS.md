@@ -139,7 +139,8 @@ Done:
   was removed: `smoke2` ran 668 of 675 checks in 4:32 and kept the CIS mapping
   (the `COMPLIANCE` column and `compliance/prowler_cis_7.0_aws.csv`).
 - `scans/checkov.sh` matches project 1's README (18 failed / 195 passed).
-- `.github/workflows/checks.yml` passes locally; not yet run on GitHub.
+- `.github/workflows/checks.yml` is green on GitHub (runs #1 to #5, last on
+  `3680482`).
 - `README.md` is drafted, with the results table left as pending.
 - Decided: CIS `cis_7.0_aws` is a mapping only; try plan JSON, and drop it for
   both before and after if it is awkward.
@@ -187,8 +188,8 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 
 ## Definition of done
 
-- [ ] `audit-role/` creates a read-only `security-audit` role (SecurityAudit, ViewOnlyAccess, Prowler additions) that needs MFA; CloudFormation copy included.
-- [ ] `scans/prowler.sh` and `scans/checkov.sh` run with pinned image digests and write to `reports/<date>-<label>/`.
+- [x] `audit-role/` creates a read-only `security-audit` role (SecurityAudit, ViewOnlyAccess, Prowler additions) that needs MFA; CloudFormation copy included. _(Terraform applied; MFA assume-role works and `iam:CreateUser` is denied. The CloudFormation copy is linted, not deployed)_
+- [x] `scans/prowler.sh` and `scans/checkov.sh` run with pinned image digests and write to `reports/<date>-<label>/`. _(Prowler smoke scan `smoke2`: 668 of 675 checks in 4:32; Checkov matches project 1's README, 18 failed / 195 passed)_
 - [ ] Baseline scans saved for project 1 at a named commit, with counts by severity.
 - [ ] Every failed finding is triaged: fix now, fix later, accepted risk (with reason) or could not evaluate (with reason).
 - [ ] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo.
