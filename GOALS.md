@@ -127,7 +127,7 @@ the code scans.
 - Raw scan output contains the account ID and resource ARNs; `reports/` is
   git-ignored and only the redacted report is committed.
 
-## Progress (updated 2026-11-18)
+## Progress (updated 2026-11-19)
 
 Done:
 
@@ -150,16 +150,24 @@ Done:
     other projects. Raw output and the plan JSON are in `reports/`; the plan
     files `baseline.tfplan`, `baseline-plan.json` and `apply-scope.tfplan` hold
     the account ID, so they stay there.
-- `report/checkov-triage-draft.md` (untracked until committed) has the Checkov
+- `report/checkov-triage-draft.md` (committed in `2f486a2`) has the Checkov
   triage and the Prowler triage with proposed buckets. Prowler severities are
   used where a Checkov check has a matching Prowler check.
-- First fix done in project 1: commit `3c792fb` limits the staging apply
-  role's IAM writes to this environment's three service roles (closes the
-  intent of Prowler `iam_inline_policy_allows_privilege_escalation`, no Checkov
-  check). Applied locally to staging with `-target=aws_iam_role_policy.apply`;
-  a full plan afterwards says no changes. Not pushed, not yet tested through
-  the workflow, and the prod apply role still has the old broad policy. The
-  after scan decides whether Prowler still flags it.
+- Fixes in project 1, one commit per check, pushed and applied to staging
+  through the Terraform workflow on 2026-11-18:
+  - `3c792fb`: the staging apply role's IAM writes are limited to this
+    environment's service roles (Prowler
+    `iam_inline_policy_allows_privilege_escalation`, no Checkov check). Run #11.
+  - `e51ea0e`: RDS logs exported to CloudWatch (CKV_AWS_129). Run #12.
+  - `e101810`: RDS query logging through a parameter group (CKV2_AWS_30).
+    Run #13 failed, run #14 passed on the same commit.
+  - `5b0232f` and `056cb9c`: RDS enhanced monitoring (CKV_AWS_118); run #15
+    failed on the PassRole condition, `056cb9c` fixed it in run #16.
+  - `5403238` ("feat: fix error ecs"): ALB access logs to a locked S3 bucket
+    (CKV_AWS_91) plus the apply role's S3 permissions. Pushed; no workflow
+    run yet, so not applied to staging.
+  The prod apply role still has the old broad policy. The after scan decides
+  whether Prowler still flags the apply role.
 
 Found along the way:
 
@@ -192,14 +200,13 @@ confirm" in the draft).
 
 Next, in order:
 
-1. Push project 1 commit `3c792fb` (ask first) and test the narrowed apply
-   role with a staging plan from the workflow. Decide on the prod apply role
-   (local prod apply of that one policy, ask first).
+1. CKV_AWS_91 (`5403238`): plan the staging apply-role policy, the user
+   applies it locally, then run the workflow on staging and check with the
+   AWS CLI.
 2. Remaining fixes, one commit per check ID in project 1, each applied to
-   staging: confused-deputy conditions on the three staging roles; CKV_AWS_129,
-   CKV2_AWS_30, CKV_AWS_118 (add the monitoring role name to
-   `service_role_arns` in the same change), CKV_AWS_91; GitHub Actions pinned
-   to commit SHAs (hand-found, no check ID).
+   staging: confused-deputy conditions on the staging roles; GitHub Actions
+   pinned to commit SHAs (hand-found, no check ID). Decide on the prod apply
+   role (local prod apply of that one policy, ask first).
 3. Finish the triage (resolve the "to confirm" rows, diff the plan failures
    against the directory failures).
 4. After scans with the same commands and versions (label `after`, same

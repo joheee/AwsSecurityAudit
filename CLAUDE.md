@@ -184,19 +184,17 @@ second scan" story clearer.
   (CKV_AWS_129), `e101810` (CKV2_AWS_30), `5b0232f` and `056cb9c`
   (CKV_AWS_118; the second fixes the PassRole condition). Workflow runs
   `44338832844`, `44343361441`, `44349042312` passed.
-- CKV_AWS_91 (ALB access logs to a locked S3 bucket) is **edited in the project
-  1 working tree, not committed, not applied**. It needs the S3 permissions in
-  the apply role first. Planned commit message: `fix: enable ALB access logs to
-  a locked S3 bucket (CKV_AWS_91)`. An ad-hoc Checkov run no longer fails
-  CKV_AWS_91.
-- Still to do, in order: commit CKV_AWS_91, plan and have the user apply the
-  staging policy, push and run the workflow; confused-deputy conditions on the
+- CKV_AWS_91 (ALB access logs to a locked S3 bucket) is **committed and pushed
+  as project 1 `5403238`** ("feat: fix error ecs"), together with the apply
+  role's S3 permissions. No workflow run yet, so it is not applied. An ad-hoc
+  Checkov run no longer fails CKV_AWS_91.
+- Still to do, in order: plan and have the user apply the staging policy for
+  CKV_AWS_91, then run the workflow; confused-deputy conditions on the
   staging roles; GitHub Actions SHA pins; decide the prod apply role policy;
   triage "to confirm" rows; after scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.
 - `reports/` holds saved plan files (`policy-*.tfplan`, `*.tfplan`). They
   contain the account ID and are git-ignored. Delete them when the work is done.
-- Uncommitted in this repo: this file, `README.md` and
-  `report/checkov-triage-draft.md`. `GOALS.md` "Progress" is stale (it still
-  says `3c792fb` is not pushed). Ask before committing.
+- This file, `README.md` and `report/checkov-triage-draft.md` are committed
+  (`2f486a2`). `GOALS.md` "Progress" lists the pushed fixes.
