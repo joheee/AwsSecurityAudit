@@ -130,7 +130,7 @@ second scan" story clearer.
   users without MFA) are reported separately from project 1's own findings.
 - The `ecs-foundation-prod-final` snapshot existed on 2026-11-17. Do not delete
   it without asking.
-- State on 2026-11-18: baseline scans are in `reports/2026-11-18-baseline/`
+- Baseline (2026-11-18): scans are in `reports/2026-11-18-baseline/`
   (project 1 `6a87780`; Checkov 195/18, 118/2, plan 152/20; Prowler 126 FAIL:
   1 critical, 23 high, 72 medium, 30 low). Plan JSON works, keep it for the
   after scan. Staging of project 1 is deployed and still costing money: destroy
@@ -140,10 +140,63 @@ second scan" story clearer.
   shell, with the variables set inline on the `scans/prowler.sh` line, or run
   it from your own terminal. The MFA code lasts about 30 seconds and works
   once. Never ask for the credentials in chat.
-- Project 1 commit `3c792fb` (not pushed) limits the apply role's IAM writes to
-  the environment's three service roles. Project 1 apply roles are changed
-  locally with `-target=aws_iam_role_policy.apply`, not from CI. The prod apply
-  role still has the old policy. Any new project 1 service role must be added to
-  `service_role_arns` in project 1 `main.tf`, or its apply is denied.
+- Project 1 commit `3c792fb` (pushed, tested from the workflow on 2026-11-18)
+  limits the apply role's IAM writes to the environment's service roles (now
+  four, with `rds-monitoring`). Project 1 apply roles are changed locally with
+  `-target=aws_iam_role_policy.apply`, not from CI. The prod apply role still
+  has the old policy and none of the 2026-11-18 additions. Any new project 1
+  service role must be added to `service_role_arns` in project 1 `main.tf`, or
+  its apply is denied.
 - `report/checkov-triage-draft.md` holds the triage with proposed buckets.
   Only the items listed under its "Decisions" are decided.
+
+## Project 1 fix workflow (learned 2026-11-18)
+
+- Project 1's `terraform.yml` has no plan-only mode: it plans and then applies
+  straight away. Triggering it is a real apply. The apply role cannot edit its
+  own policy, so a fix that needs new permissions fails with 403 until the
+  policy is applied locally (`-target=aws_iam_role_policy.apply`, plan saved in
+  git-ignored `reports/`, show it first, the user runs the apply).
+- The order that works: commit, plan the policy-only change, the user applies
+  it, push, run the workflow on staging, then verify with the AWS CLI.
+- Saved plans go stale when a pipeline run touches the state. Re-plan to a new
+  file after any run, and tell the user to apply before anything else.
+- Auto mode blocks a chained `terraform apply`. Never append an apply to a
+  plan command; the user applies saved plans from their own terminal.
+- RDS enhanced monitoring: `iam:PassRole` is evaluated with
+  `iam:PassedToService = rds.amazonaws.com`, not `monitoring.rds.amazonaws.com`.
+  Both are in the apply policy.
+- ALB access logs support only SSE-S3 (not KMS) and, in `ap-southeast-2`, the
+  regional ELB account principal (`aws_elb_service_account`).
+- After a parameter group change the staging instance shows `pending-reboot`.
+  Not rebooted; staging is destroyed after the scans.
+- Fixes add findings too: each new log group fails CKV_AWS_158 and
+  CKV_AWS_338, and the ALB log bucket fails CKV_AWS_18, 21, 144, 145 and
+  CKV2_AWS_62 (accepted, log-only bucket). List them in the report as
+  "introduced by a fix". Do not skip them to hide them.
+- Counts from ad-hoc Checkov runs are not results. Only the saved before and
+  after scans go in the report.
+
+## State on 2026-11-19 (end of session)
+
+- Project 1 fixes pushed and applied to staging, each verified through the
+  workflow: `3c792fb` (apply role IAM, no Checkov check), `e51ea0e`
+  (CKV_AWS_129), `e101810` (CKV2_AWS_30), `5b0232f` and `056cb9c`
+  (CKV_AWS_118; the second fixes the PassRole condition). Workflow runs
+  `44338832844`, `44343361441`, `44349042312` passed.
+- CKV_AWS_91 (ALB access logs to a locked S3 bucket) is **edited in the project
+  1 working tree, not committed, not applied**. It needs the S3 permissions in
+  the apply role first. Planned commit message: `fix: enable ALB access logs to
+  a locked S3 bucket (CKV_AWS_91)`. An ad-hoc Checkov run no longer fails
+  CKV_AWS_91.
+- Still to do, in order: commit CKV_AWS_91, plan and have the user apply the
+  staging policy, push and run the workflow; confused-deputy conditions on the
+  staging roles; GitHub Actions SHA pins; decide the prod apply role policy;
+  triage "to confirm" rows; after scans; report; destroy staging.
+- Staging is still running and costing about $3 a day (since 2026-11-17).
+  The `ecs-foundation-prod-final` snapshot decision comes before the destroy.
+- `reports/` holds saved plan files (`policy-*.tfplan`, `*.tfplan`). They
+  contain the account ID and are git-ignored. Delete them when the work is done.
+- Uncommitted in this repo: this file, `README.md` and
+  `report/checkov-triage-draft.md`. `GOALS.md` "Progress" is stale (it still
+  says `3c792fb` is not pushed). Ask before committing.

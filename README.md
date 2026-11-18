@@ -9,10 +9,13 @@ The target is my own working stack,
 (VPC, ECS Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC, in
 `ap-southeast-2`). The findings and the fixes are real.
 
-> **Status: in progress.** The audit role is applied (MFA assume-role tested)
-> and both scan scripts have run as smoke tests. The baseline scan, the fixes, the after scan and the report are not done yet, so
-> the results section below is empty on purpose. Nothing in this README is a
-> measured result unless a saved scan backs it.
+> **Status: in progress (updated 2026-11-19).** The audit role is applied (MFA
+> assume-role tested), both scan scripts work and the baseline scans are saved.
+> Four of the planned fixes are applied to the staging stack (RDS log exports,
+> RDS query logging, RDS enhanced monitoring, a narrower CI apply role); the
+> ALB access-log fix is written but not applied. The after scan and the report
+> are not done, so the results table below is empty on purpose. Nothing in this
+> README is a measured result unless a saved scan backs it.
 
 ## What the audit covers
 
@@ -122,15 +125,28 @@ Only the redacted report is committed.
 
 ## Results
 
-Not available yet. This section will hold the before and after counts by
-severity for each tool, with the check IDs that changed, once both scans have
-run. See the status note at the top.
+The "before" numbers are measured and saved. The "after" scan has not run, so
+there are no after numbers yet. See the status note at the top.
+
+Baseline scans, 2026-11-18, project 1 at `6a87780` (docs only on top of
+`7dc21e5`), Prowler 5.49.0 and Checkov 3.4.5:
 
 | | Before | After |
 |---|---|---|
-| Prowler by severity | _pending_ | _pending_ |
-| Checkov Terraform | _pending_ | _pending_ |
-| Checkov GitHub Actions | _pending_ | _pending_ |
+| Prowler FAIL (all 668 checks that ran) | 126: 1 critical, 23 high, 72 medium, 30 low | _pending_ |
+| Checkov Terraform (directory) | 195 passed, 18 failed | _pending_ |
+| Checkov Terraform (plan JSON) | 152 passed, 20 failed | _pending_ |
+| Checkov GitHub Actions | 118 passed, 2 failed | _pending_ |
+
+Prowler's 126 failures include account-level findings and other projects'
+resources, not only the audited stack: 25 rows are the stack's own resources
+and 9 are its hand-made state bucket. The rest are reported separately.
+
+Fixes applied to staging so far, one commit per check in project 1:
+CKV_AWS_129, CKV2_AWS_30 and CKV_AWS_118 (RDS), plus a narrower CI apply role
+(Prowler `iam_inline_policy_allows_privilege_escalation`, no Checkov check).
+Fixes can add findings of their own, for example the new log groups fail the
+log encryption and retention checks. The report lists those too.
 
 Report: `report/audit-report.md` and a PDF copy (not written yet). A blank
 `report/TEMPLATE.md` for new client jobs is planned.
@@ -138,8 +154,10 @@ Report: `report/audit-report.md` and a PDF copy (not written yet). A blank
 ## Known limits
 
 - Region `ap-southeast-2` only (organization SCP).
-- The SCP denies `ec2:DescribeInstances`, so Prowler checks that need it cannot
-  run. They are reported as "could not evaluate", never as passed.
+- The org SCP was believed to deny `ec2:DescribeInstances`. The call succeeded
+  as the admin user on 2026-11-18 (the account has no EC2 instances), but it was
+  not tested as the audit role. Checks that error are reported as "could not
+  evaluate", never as passed.
 - Checkov open source does not give severities without a Prisma Cloud key.
   Checkov findings are rated from the matching Prowler check or by hand, and
   the report says which.
@@ -166,5 +184,5 @@ It has no AWS access.
 audit-role/   read-only security-audit role (Terraform and CloudFormation)
 scans/        prowler.sh and checkov.sh
 reports/      raw scan output (git-ignored)
-report/       audit report, PDF and template (to be written)
+report/       triage draft now; audit report, PDF and template still to be written
 ```
