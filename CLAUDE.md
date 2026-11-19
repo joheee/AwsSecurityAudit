@@ -205,7 +205,10 @@ second scan" story clearer.
   evaluate". Not tested as the audit role.
 - GitHub Actions SHA pins are project 1 `a9d7511` (all 11 `uses:` lines, exact
   version in a comment). Run `44579607339` passed with "No changes".
-- Still to do, in order: decide the prod apply role policy; triage "to confirm"
+- Prod apply role: decided 2026-11-19 to leave the old policy and report it as
+  a known difference. Do not plan or apply it unless asked again. The after
+  scan will still flag it for prod.
+- Still to do, in order: triage "to confirm"
   rows; after scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.

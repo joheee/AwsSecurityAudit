@@ -213,9 +213,11 @@ confirm" in the draft).
 
 Next, in order:
 
-1. Decide on the prod apply role (local prod apply of that one policy, ask
-   first). Any other remaining fix is one commit per change in project 1,
-   applied to staging.
+1. Prod apply role: decided 2026-11-19 to leave it as is and report it as a
+   known difference (prod is not deployed; its apply role still has the old
+   broad policy, so the after scan will still flag
+   `iam_inline_policy_allows_privilege_escalation` for it). The staging role is
+   fixed in `3c792fb`.
 2. Finish the triage (resolve the "to confirm" rows, diff the plan failures
    against the directory failures).
 3. After scans with the same commands and versions (label `after`, same
