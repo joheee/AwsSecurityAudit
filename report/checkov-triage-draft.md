@@ -146,6 +146,29 @@ is in the log-group findings. Prod is not deployed for this audit, so it is
 probably left over from an earlier prod run. Confirm and, if so, report it as a
 leftover, not a project 1 defect.
 
+## "To confirm" rows, checked 2026-11-19 (evidence, proposed buckets)
+
+Read with the AWS CLI as the admin user, not as the `security-audit` role.
+Buckets are **proposed**; none is decided until it appears under "Decisions".
+
+| Prowler check | Evidence | Proposed bucket |
+|---|---|---|
+| rds_instance_protected_by_backup_plan (High) | No AWS Backup plans exist. The instance has automated backups with 7 days retention (staging; prod sets 14) and automated snapshots exist. | Accepted. An AWS Backup plan adds standing cost; automated backups cover recovery. Say the check is about a backup *plan*, not about having backups. |
+| rds_instance_extended_support (Med) | `EngineLifecycleSupport = open-source-rds-extended-support` on postgres 17.9, status `available`. This is the enrolment setting, not proof that the version is out of standard support. I did not verify the end-of-standard-support date. | Fix later, cheap: set `engine_lifecycle_support = "open-source-rds-extended-support-disabled"`. Not yet decided. |
+| secretsmanager_has_restrictive_resource_policy (High) | Prowler's text: no resource policy "or access to the policy is denied for the role `security-audit`". As the admin user, `get-resource-policy` shows **no resource policy** on the RDS-managed secret. | Accepted, with the reason: the secret is managed by RDS (`manage_master_user_password`) and access is by IAM only. Also a "could not fully evaluate as the audit role" note: not tested as that role. |
+| ecs_task_definitions_logging_block_mode (Low) | Container `app` uses `awslogs` with no `mode` option, so it is the default (blocking). | Accepted. Non-blocking mode can drop logs; blocking is the safer default for an audit trail. |
+| rds_instance_non_default_port (Low) | Port 5432. The DB security group allows 5432 only from `ecs-foundation-staging-service` (a security group, no CIDR). Not publicly accessible. | Accepted. The port is not the control; the security group is. |
+| ec2_networkacl_allow_ingress_any_port, ..._tcp_port_22, ..._tcp_port_3389 (High/Med, 2 ACLs) | Both are **default** network ACLs. `acl-061be7fc...` belongs to `vpc-02b7ab6c...` (`ecs-foundation-staging`, project 1, 6 subnet associations). `acl-08581dc4...` belongs to the account's **default VPC** (3 associations, not project 1). | Split. Project 1's ACL: it is the VPC default, not managed in Terraform; security groups are the control, ALB is the only public entry. Propose Accepted or Fix later (`aws_default_network_acl`). Default-VPC ACL: report only, not project 1. |
+| networkfirewall_in_all_vpc (Med) | Fails for project 1's VPC. | Accepted. Network Firewall has standing cost and is out of scope; recommend for a real client. |
+| Prod container-insights log group | `/aws/ecs/containerinsights/ecs-foundation-prod/performance`: created 2026-11-03 19:22 UTC, 0 bytes, retention 1 day. The `ecs-foundation-prod` cluster does not exist (`MISSING`). | A leftover from an earlier prod run. Report it as a leftover, not a defect. Not deleting it unasked. |
+
+Notes:
+- The two NACL rows move the owner split: one default NACL belongs to project 1,
+  so the "project 1 resources" row count grows. Re-measure from the CSV before
+  quoting any count.
+- The Prowler MANUAL rows and the secret row are the "could not evaluate"
+  group; keep them in that section.
+
 ## Project 1 state bucket (hand-made, outside Terraform)
 
 `joheee-ecs-foundation-tfstate` fails: KMS encryption, MFA delete, object
