@@ -9,12 +9,11 @@ The target is my own working stack,
 (VPC, ECS Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC, in
 `ap-southeast-2`). The findings and the fixes are real.
 
-> **Status: scans and draft report done (updated 2026-11-20).** The baseline
+> **Status: scans, report and PDF done (updated 2026-11-20).** The baseline
 > (2026-11-18) and after (2026-11-20) scans are saved, and the fixes were
-> applied to a staging stack that has since been destroyed. The report in
-> `report/audit-report.md` is a **draft**: the triage buckets marked
-> *(proposed)* are not yet confirmed, and the PDF is not made. Every number
-> below comes from a saved scan.
+> applied to a staging stack that has since been destroyed. The report is in
+> `report/audit-report.md` with a PDF copy; the triage buckets were confirmed
+> on 2026-11-20. Every number below comes from a saved scan.
 
 ## What the audit covers
 
@@ -121,6 +120,7 @@ Only the redacted report is committed.
 | Checkov | 3.4.5 (image pinned by digest) |
 | CIS framework | `cis_7.0_aws` (the CIS mapping of each finding; all checks run) |
 | Terraform | `>= 1.10`, AWS provider `~> 6.0` |
+| pandoc (PDF only) | 3.14 in `pandoc/latex`, image pinned by digest in `report/make-pdf.sh` |
 
 ## Results
 
@@ -158,9 +158,11 @@ for privilege escalation; the production apply role was left as it is by
 decision; an attempt to disable RDS Extended Support did not change the live
 value and was reverted.
 
-Report: [`report/audit-report.md`](report/audit-report.md) (draft; PDF not made
-yet). A blank [`report/TEMPLATE.md`](report/TEMPLATE.md) is there for new client
-jobs.
+Report: [`report/audit-report.md`](report/audit-report.md) and a PDF copy,
+[`report/audit-report.pdf`](report/audit-report.pdf). To rebuild the PDF after
+editing the report, run `report/make-pdf.sh` (needs Docker; pandoc runs in a
+pinned image). A blank [`report/TEMPLATE.md`](report/TEMPLATE.md) is there for
+new client jobs.
 
 ## Known limits
 
@@ -196,5 +198,5 @@ It has no AWS access.
 audit-role/   read-only security-audit role (Terraform and CloudFormation)
 scans/        prowler.sh and checkov.sh
 reports/      raw scan output (git-ignored)
-report/       audit-report.md (draft), TEMPLATE.md, checkov-triage-draft.md; PDF still to do
+report/       audit-report.md and .pdf, TEMPLATE.md, checkov-triage-draft.md, make-pdf.sh
 ```

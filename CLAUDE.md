@@ -39,7 +39,10 @@ second scan" story clearer.
   path to the project 1 checkout, and write to `reports/<date>-<label>/`.
 - `reports/`: raw scan output. Git-ignored, because it holds the account ID
   and ARNs.
-- `report/`: `audit-report.md`, the PDF, `TEMPLATE.md` and redacted excerpts.
+- `report/`: `audit-report.md`, `audit-report.pdf` (built by `make-pdf.sh`
+  with `pdf-header.tex`), `TEMPLATE.md`, `checkov-triage-draft.md` and redacted
+  excerpts. Rebuild the PDF after any report edit and look at the pages: wide
+  tables rely on dash counts in the table separator rows for column widths.
 - `.github/workflows/checks.yml`: shellcheck, actionlint, `terraform fmt
   -check`, `validate`, tflint, cfn-lint and Checkov on this repo. No AWS
   access. Actions pinned by SHA, tools by image digest or version.
@@ -89,6 +92,7 @@ second scan" story clearer.
   `checks.yml`).
 - Terraform 1.15.9 in CI, `>= 1.10` in `versions.tf`, AWS provider `~> 6.0`.
 - tflint 0.64.0, cfn-lint 1.60.1, ShellCheck 0.11.0, actionlint 1.7.12.
+- pandoc 3.14 (`pandoc/latex`, digest in `report/make-pdf.sh`), for the PDF only.
 - Changing any Prowler or Checkov pin means re-running both before and after.
 
 ## Notes
@@ -238,13 +242,14 @@ second scan" story clearer.
   right after the destroy were gone when rechecked on 2026-11-20).
 - Triage is done and confirmed (2026-11-20): plan versus directory diff and
   owner split are in `report/checkov-triage-draft.md`; all buckets decided
-  (Decisions 5 to 11 there). `report/audit-report.md` (draft), `TEMPLATE.md`
-  and the README results are written and committed.
-- Still to do: PDF of the report (check pandoc and a PDF engine are
-  installed; make it only once the report text is final); a final read of the
-  report; a check of the whole git history for account IDs, keys and raw scan
-  output before ticking the "no secrets committed" box; delete the saved plan
-  files in `reports/` (they hold the account ID).
+  (Decisions 5 to 11 there). `report/audit-report.md`, its PDF, `TEMPLATE.md`
+  and the README results are written and committed (PDF `36023e4`, final read
+  `f110843`).
+- Still to do: a check of the whole git history for account IDs, keys and raw
+  scan output before ticking the last Definition-of-done box ("no secrets
+  committed"); delete the saved plan files in `reports/` (they hold the account
+  ID). CI shellchecks only `scans/*.sh`, so `report/make-pdf.sh` is not covered
+  by CI (it was checked locally with the pinned ShellCheck).
 - `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
   `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
   are git-ignored. Delete them when the work is done.

@@ -230,16 +230,16 @@ staging apply role still fails `iam_inline_policy_allows_privilege_escalation`
 scan also has a new CKV2_AWS_69 (cause not confirmed). Staging destroyed
 (Destroy run `44589344952`, 61 resources); `ecs-foundation-prod-final` kept.
 
-Open: the day-1 check of whether the org manages CloudTrail, GuardDuty or
-Security Hub centrally; where staging was deployed from (local or workflow);
-what to do with the prod snapshot; whether the account-level S3 public access
-block and IAM password policy are in scope as fixes or report-only (decide
-before the after scan; both change the whole account, show and ask first);
-and whether the report text needs a final read before the PDF. The
-proposed buckets were confirmed on 2026-11-20 (default NACL: Accepted;
-state bucket: versioning and TLS-only policy Fix later, rest Accepted; CI
-apply role: Accepted risk; rating: moderate). The account-level fixes stay
-recommendations, as agreed.
+Still open (stated as "not checked" in the report): whether the org manages
+CloudTrail, GuardDuty or Security Hub centrally, and where staging was first
+deployed from (local or workflow).
+
+Decided: the prod snapshot `ecs-foundation-prod-final` is kept (2026-11-19);
+the account-level fixes (S3 account public access block, IAM password policy)
+and the default NACL are recommendations, not changes; the prod apply role is
+left as is. The triage buckets were confirmed on 2026-11-20 (default NACL:
+Accepted; state bucket: versioning and TLS-only policy Fix later, rest
+Accepted; CI apply role: Accepted risk; rating: moderate).
 
 Next, in order:
 
@@ -250,8 +250,8 @@ Next, in order:
    fixed in `3c792fb`.
 2. (Done 2026-11-20) Triage: plan versus directory diff, owner split and all
    buckets confirmed; report draft, `TEMPLATE.md` and README results written.
-3. A final read of `report/audit-report.md`, then the PDF (check pandoc and a
-   PDF engine), then tick the report-and-PDF box.
+3. (Done 2026-11-20) Final read of `report/audit-report.md` (wording fixes in
+   `f110843`), then the PDF with `report/make-pdf.sh` (`36023e4`).
 4. Check the whole git history for account IDs, keys and raw scan output, then
    tick the "no secrets committed" box. Delete the saved plan files in
    `reports/` (they hold the account ID).
@@ -281,7 +281,7 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 - [x] Every failed finding is triaged: fix now, fix later, accepted risk (with reason) or could not evaluate (with reason). _(buckets confirmed 2026-11-20; see `report/checkov-triage-draft.md` Decisions and `report/audit-report.md`)_
 - [x] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo. _(the only critical is account level; each project 1 high is fixed, accepted or fix later, with a reason. Fixes are one commit per change, listed in the report)_
 - [x] After scans saved; the report has a before/after table by severity for each tool. _(`reports/2026-11-20-after/`; Checkov severities are matched or judged, the report says which)_
-- [ ] `report/audit-report.md` and PDF: summary page, findings by severity, fixes, accepted risks, method and limits; account details redacted.
+- [x] `report/audit-report.md` and PDF: summary page, findings by severity, fixes, accepted risks, method and limits; account details redacted. _(PDF made with `report/make-pdf.sh` in a pinned pandoc image; both checked for account IDs, ARNs, IPs and e-mail addresses in the current files. The history check is the last open box)_
 - [x] `report/TEMPLATE.md` exists for client jobs. _(committed `238a98f`)_
 - [ ] No access keys, account IDs or raw scan output committed; staging destroyed after the scans.
 - [x] README has scope, how to grant access, how to run the scans, the before/after table and links to the report. _(updated 2026-11-20)_
