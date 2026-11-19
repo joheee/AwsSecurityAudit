@@ -9,13 +9,12 @@ The target is my own working stack,
 (VPC, ECS Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC, in
 `ap-southeast-2`). The findings and the fixes are real.
 
-> **Status: in progress (updated 2026-11-19).** The audit role is applied (MFA
-> assume-role tested), both scan scripts work and the baseline scans are saved.
-> Four of the planned fixes are applied to the staging stack (RDS log exports,
-> RDS query logging, RDS enhanced monitoring, a narrower CI apply role); the
-> ALB access-log fix is written but not applied. The after scan and the report
-> are not done, so the results table below is empty on purpose. Nothing in this
-> README is a measured result unless a saved scan backs it.
+> **Status: scans and draft report done (updated 2026-11-20).** The baseline
+> (2026-11-18) and after (2026-11-20) scans are saved, and the fixes were
+> applied to a staging stack that has since been destroyed. The report in
+> `report/audit-report.md` is a **draft**: the triage buckets marked
+> *(proposed)* are not yet confirmed, and the PDF is not made. Every number
+> below comes from a saved scan.
 
 ## What the audit covers
 
@@ -125,31 +124,43 @@ Only the redacted report is committed.
 
 ## Results
 
-The "before" numbers are measured and saved. The "after" scan has not run, so
-there are no after numbers yet. See the status note at the top.
-
-Baseline scans, 2026-11-18, project 1 at `6a87780` (docs only on top of
-`7dc21e5`), Prowler 5.49.0 and Checkov 3.4.5:
+Baseline 2026-11-18 (project 1 at `6a87780`, docs only on top of `7dc21e5`)
+and after 2026-11-20 (project 1 at `9f8c0be`). Same commands, tool versions
+and scope in both: Prowler 5.49.0 and Checkov 3.4.5.
 
 | | Before | After |
 |---|---|---|
-| Prowler FAIL (all 668 checks that ran) | 126: 1 critical, 23 high, 72 medium, 30 low | _pending_ |
-| Checkov Terraform (directory) | 195 passed, 18 failed | _pending_ |
-| Checkov Terraform (plan JSON) | 152 passed, 20 failed | _pending_ |
-| Checkov GitHub Actions | 118 passed, 2 failed | _pending_ |
+| Prowler FAIL rows | 126: 1 critical, 23 high, 72 medium, 30 low | 134: 1 critical, 21 high, 80 medium, 32 low |
+| Checkov Terraform (directory) | 195 passed, 18 failed | 235 passed, 23 failed |
+| Checkov Terraform (plan JSON) | 152 passed, 20 failed | 180 passed, 25 failed |
+| Checkov GitHub Actions | 118 passed, 2 failed | 118 passed, 2 failed |
 
-Prowler's 126 failures include account-level findings and other projects'
-resources, not only the audited stack: 25 rows are the stack's own resources
-and 9 are its hand-made state bucket. The rest are reported separately.
+**Failures went up, not down, and that is the honest result.** The fixes closed
+findings (Prowler 6, Checkov 4 per Terraform scan) but also added resources
+that fail lower-severity checks (Prowler 14, Checkov 9 per Terraform scan):
+an access-log bucket for the load balancer and new log groups. Those are listed
+in the report, not hidden. On the audited stack itself, high-severity Prowler
+rows went from 9 to 7.
 
-Fixes applied to staging so far, one commit per check in project 1:
-CKV_AWS_129, CKV2_AWS_30 and CKV_AWS_118 (RDS), plus a narrower CI apply role
-(Prowler `iam_inline_policy_allows_privilege_escalation`, no Checkov check).
-Fixes can add findings of their own, for example the new log groups fail the
-log encryption and retention checks. The report lists those too.
+Prowler's rows include account-level findings and other projects' resources,
+which were not changed (86 rows, identical before and after). The audited
+stack's own rows went from 31 to 37, plus 2 on a log group AWS creates, and 9
+on its hand-made state bucket.
 
-Report: `report/audit-report.md` and a PDF copy (not written yet). A blank
-`report/TEMPLATE.md` for new client jobs is planned.
+Fixes applied to staging, one commit per change in project 1: RDS log exports
+(CKV_AWS_129), RDS query logging (CKV2_AWS_30), RDS enhanced monitoring
+(CKV_AWS_118), ALB access logs to a locked S3 bucket (CKV_AWS_91),
+confused-deputy conditions on three service roles, a narrower CI apply role,
+and GitHub Actions pinned to commit SHAs.
+
+**Not fixed:** the staging CI apply role was narrowed but Prowler still flags it
+for privilege escalation; the production apply role was left as it is by
+decision; an attempt to disable RDS Extended Support did not change the live
+value and was reverted.
+
+Report: [`report/audit-report.md`](report/audit-report.md) (draft; PDF not made
+yet). A blank [`report/TEMPLATE.md`](report/TEMPLATE.md) is there for new client
+jobs.
 
 ## Known limits
 
@@ -167,10 +178,11 @@ Report: `report/audit-report.md` and a PDF copy (not written yet). A blank
 ## Cost and time
 
 - The scans are free.
-- The audited staging stack costs about $93 a month, so running it for one
-  working day costs about $3. It is destroyed the same day the scans finish.
+- The audited staging stack costs about $93 a month, about $3 a day. It ran
+  from 2026-11-17 to 2026-11-19 and was destroyed after the after scans.
 - ALB access logs add a few cents of S3 storage.
-- Nothing is left running. Planned effort: two working days.
+- Nothing is left running. One manual production database snapshot was kept
+  by decision. Planned effort was two working days; the scans and fixes ran from 2026-11-17 to 2026-11-20.
 
 ## Checks on this repo
 
@@ -184,5 +196,5 @@ It has no AWS access.
 audit-role/   read-only security-audit role (Terraform and CloudFormation)
 scans/        prowler.sh and checkov.sh
 reports/      raw scan output (git-ignored)
-report/       triage draft now; audit report, PDF and template still to be written
+report/       audit-report.md (draft), TEMPLATE.md, checkov-triage-draft.md; PDF still to do
 ```

@@ -252,8 +252,8 @@ Next, in order:
 3. Before/after tables, report, PDF, `TEMPLATE.md`, README results. The after
    scans are saved (see Progress). No AWS access is needed for this.
 4. Delete the saved plan files in `reports/` (they hold the account ID).
-5. Recheck the 4 automated RDS snapshots of the staging DB that were still
-   listed after the destroy.
+5. (Done 2026-11-20) the 4 automated RDS snapshots of the staging DB were gone
+   when rechecked; only `ecs-foundation-prod-final` remains.
 
 ## Plan (2 days)
 
@@ -279,6 +279,6 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 - [ ] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo.
 - [ ] After scans saved; the report has a before/after table by severity for each tool.
 - [ ] `report/audit-report.md` and PDF: summary page, findings by severity, fixes, accepted risks, method and limits; account details redacted.
-- [ ] `report/TEMPLATE.md` exists for client jobs.
+- [x] `report/TEMPLATE.md` exists for client jobs. _(committed `238a98f`)_
 - [ ] No access keys, account IDs or raw scan output committed; staging destroyed after the scans.
 - [ ] README has scope, how to grant access, how to run the scans, the before/after table and links to the report.

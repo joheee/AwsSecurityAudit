@@ -234,9 +234,8 @@ second scan" story clearer.
   resources destroyed). `ecs-foundation-prod-final` was kept by decision
   (still `available`). Left in the account: both environments' CI plan and
   apply roles (by design), the prod container-insights log group and
-  `RDSOSMetrics` log group, and 4 automated RDS snapshots of the staging DB
-  that were still listed after the destroy with no retained-backup record
-  (recheck; they may be cleaned up on their own).
+  `RDSOSMetrics` log group, (the 4 automated RDS snapshots of the staging DB that were still listed
+  right after the destroy were gone when rechecked on 2026-11-20).
 - Still to do, in order: diff plan-JSON and directory failures; the user's
   decisions on the proposed buckets; re-measure the owner split from both
   CSVs; before/after tables, report, PDF, `TEMPLATE.md`, README results;
