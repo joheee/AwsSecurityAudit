@@ -9,6 +9,42 @@ The target is my own working stack,
 (VPC, ECS Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC, in
 `ap-southeast-2`). The findings and the fixes are real.
 
+## How the audit works
+
+```mermaid
+flowchart LR
+    role["<b>Read-only audit role</b><br/>MFA required<br/>no access keys"]
+
+    subgraph before["Baseline scan"]
+        direction TB
+        p1["<b>Prowler</b><br/>live AWS account<br/>CIS benchmark mapping"]
+        c1["<b>Checkov</b><br/>Terraform and<br/>GitHub Actions code"]
+    end
+
+    triage["<b>Triage</b><br/>every finding ranked by severity<br/>fix now, fix later,<br/>accepted, could not evaluate"]
+
+    fix["<b>Fixes in Terraform</b><br/>one commit per change<br/>applied through the pipeline"]
+
+    subgraph after["Same scans again"]
+        direction TB
+        p2["<b>Prowler</b><br/>same version and scope"]
+        c2["<b>Checkov</b><br/>same version and scope"]
+    end
+
+    report["<b>Report and PDF</b><br/>before and after tables<br/>findings the fixes introduced"]
+
+    role --> before --> triage --> fix --> after --> report
+
+    classDef access fill:#e8f0fe,stroke:#4285f4,color:#1a1a1a
+    classDef scan fill:#fff4e5,stroke:#f29900,color:#1a1a1a
+    classDef work fill:#e6f4ea,stroke:#34a853,color:#1a1a1a
+    classDef out fill:#fce8e6,stroke:#d93025,color:#1a1a1a
+    class role access
+    class p1,c1,p2,c2 scan
+    class triage,fix work
+    class report out
+```
+
 > **Status: scans, report and PDF done (updated 2026-11-20).** The baseline
 > (2026-11-18) and after (2026-11-20) scans are saved, and the fixes were
 > applied to a staging stack that has since been destroyed. The report is in
