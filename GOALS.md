@@ -215,6 +215,20 @@ standard support not verified); the RDS-managed secret has no resource policy
 VPC default ACLs, one in project 1's VPC and one in the account's default VPC;
 the prod container-insights log group is a leftover (no prod cluster exists).
 
+After scans (2026-11-20, `reports/2026-11-20-after/`, project 1 `9f8c0be`,
+same commands and pins as the baseline): Checkov Terraform 195/18 to 235/23,
+GitHub Actions 118/2 to 118/2, plan 152/20 to 180/25; Prowler FAIL 126 to 134
+(critical 1 to 1, high 23 to 21, medium 72 to 80, low 30 to 32), PASS 270 to
+301, MANUAL 6 to 6. Closed: Checkov 4 (CKV_AWS_91, 118, 129, CKV2_AWS_30) and
+Prowler 6 (3 confused-deputy, ALB logging, RDS log export, enhanced
+monitoring). Introduced by fixes: Checkov 9 in each of Terraform and plan;
+Prowler 14 (ALB log bucket 11 rows including `s3_bucket_cross_account_access`
+high, 3 log-group rows including AWS-created `RDSOSMetrics`). Not closed: the
+staging apply role still fails `iam_inline_policy_allows_privilege_escalation`
+(6 actions still flagged, `iam:CreatePolicyVersion` removed). The Checkov plan
+scan also has a new CKV2_AWS_69 (cause not confirmed). Staging destroyed
+(Destroy run `44589344952`, 61 resources); `ecs-foundation-prod-final` kept.
+
 Open: the day-1 check of whether the org manages CloudTrail, GuardDuty or
 Security Hub centrally; where staging was deployed from (local or workflow);
 what to do with the prod snapshot; whether the account-level S3 public access
@@ -230,16 +244,15 @@ Next, in order:
    broad policy, so the after scan will still flag
    `iam_inline_policy_allows_privilege_escalation` for it). The staging role is
    fixed in `3c792fb`.
-2. Finish the triage: diff the plan-JSON failures (20) against the directory
-   failures (18) line by line (not done), get the user's decision on the
-   proposed buckets, then re-measure the project 1 versus other split from the
-   CSV (the project 1 default NACL adds rows).
-3. After scans with the same commands and versions (label `after`, same
-   `--plan-json` approach), before/after table, report, PDF, `TEMPLATE.md`,
-   README results.
-4. Destroy staging the same day the after scans finish. It has been running
-   since 2026-11-17, about $3 a day. Check the `ecs-foundation-prod-final`
-   snapshot decision first.
+2. Finish the triage: diff the plan-JSON failures against the directory
+   failures line by line (not done), get the user's decision on the proposed
+   buckets, then re-measure the project 1 versus other split from both CSVs
+   (the project 1 default NACL adds rows).
+3. Before/after tables, report, PDF, `TEMPLATE.md`, README results. The after
+   scans are saved (see Progress). No AWS access is needed for this.
+4. Delete the saved plan files in `reports/` (they hold the account ID).
+5. Recheck the 4 automated RDS snapshots of the staging DB that were still
+   listed after the destroy.
 
 ## Plan (2 days)
 

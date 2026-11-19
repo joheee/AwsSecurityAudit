@@ -217,12 +217,30 @@ second scan" story clearer.
   `9f8c0be`): the live `EngineLifecycleSupport` never changed. Not fixed; do
   not retry on the existing instance. Prod snapshot decision 2026-11-19: keep
   `ecs-foundation-prod-final` for now (destroy staging without touching it).
-- Still to do, in order: diff plan-JSON and directory failures; get the user's
-  decisions (proposed buckets; account-level fixes and the default NACL will
-  be recommendations, not fixes, as agreed 2026-11-19); re-measure the owner split; after
-  scans; report; destroy staging.
-- Staging is still running and costing about $3 a day (since 2026-11-17).
-  The `ecs-foundation-prod-final` snapshot decision comes before the destroy.
+- After scans saved in `reports/2026-11-20-after/` (project 1 `9f8c0be`, same
+  commands and pins as the baseline; log `/tmp/prowler-after-run.log` is not in
+  the repo). Checkov: Terraform 235/23, GitHub Actions 118/2, plan 180/25
+  (4 closed, 9 introduced in each of Terraform and plan). Prowler: 134 FAIL
+  (1 critical, 21 high, 80 medium, 32 low), 301 PASS, 6 MANUAL; 6 closed, 14
+  introduced (ALB log bucket 11 rows incl. `s3_bucket_cross_account_access`
+  high from the ELB principal, 3 log-group rows incl. AWS-created
+  `RDSOSMetrics`). The staging apply role STILL fails
+  `iam_inline_policy_allows_privilege_escalation` (`iam:CreatePolicyVersion`
+  dropped from the flagged list, 6 actions remain); say so, do not claim it
+  fixed. `elbv2_logging_enabled` passed as the audit role. A first Prowler
+  run produced no output folder (cause never found); the saved run is the
+  second or third.
+- Staging was destroyed on 2026-11-19/20 (Destroy run `44589344952`, 61
+  resources destroyed). `ecs-foundation-prod-final` was kept by decision
+  (still `available`). Left in the account: both environments' CI plan and
+  apply roles (by design), the prod container-insights log group and
+  `RDSOSMetrics` log group, and 4 automated RDS snapshots of the staging DB
+  that were still listed after the destroy with no retained-backup record
+  (recheck; they may be cleaned up on their own).
+- Still to do, in order: diff plan-JSON and directory failures; the user's
+  decisions on the proposed buckets; re-measure the owner split from both
+  CSVs; before/after tables, report, PDF, `TEMPLATE.md`, README results;
+  delete the saved plan files in `reports/`.
 - `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
   `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
   are git-ignored. Delete them when the work is done.
