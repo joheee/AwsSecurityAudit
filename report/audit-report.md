@@ -1,8 +1,7 @@
 # AWS Security Audit: sample report
 
-**DRAFT.** The triage buckets were confirmed by the owner on 2026-11-20; the
-text has not had a final read. Every number comes from a saved scan (see
-Method). Account IDs, ARNs with
+**Status:** triage buckets confirmed by the owner on 2026-11-20; final read
+done. Every number comes from a saved scan (see Method). Account IDs, ARNs with
 account numbers, IP addresses and e-mail addresses are redacted.
 
 | | |
@@ -21,15 +20,17 @@ level.** The audited stack has no public data store: the database is
 private and reachable only from the application's security group. The main
 open points are plain HTTP on the load balancer (accepted in this sample), a
 CI deploy role that Prowler still flags for privilege escalation, and a
-writable container filesystem. At account level the audit role could not see
-a CloudTrail trail, GuardDuty or Security Hub in this region, and the account
+writable container filesystem. At account level the audit role found no
+CloudTrail trail with logging enabled, and GuardDuty and Security Hub were not
+enabled, in this region; the account
 has broad administrator access and IAM users without hardware MFA. Those
 findings are reported separately from the audited stack and were not changed.
 
 **Top five risks** (ranked by what they would mean for a business):
 
 1. **No visible logging or threat detection (account level).** Prowler found no
-   CloudTrail trail, GuardDuty or Security Hub in the region. Whether the
+   CloudTrail trail with logging enabled, and GuardDuty and Security Hub not
+   enabled, in the region. Whether the
    organization manages these centrally was not checked. Without them, a
    compromise may go unseen. Recommendation, not fixed here.
 2. **Broad administrator access and weak MFA (account level).** The
@@ -48,7 +49,8 @@ findings are reported separately from the audited stack and were not changed.
    decision.
 
 **What was fixed** (all in the audited stack, one commit per change, each
-applied to staging through its own pipeline and checked with the AWS CLI):
+applied to staging through the project's pipeline and verified by the pipeline
+run and, where the setting can be read, with the AWS CLI):
 
 | Fix | Closes |
 |---|---|
@@ -190,7 +192,7 @@ projects. They were not changed. 86 rows, identical before and after.
 
 | Theme | Rows | Highest | What it means |
 |---|---|---|---|
-| Logging, monitoring and detection | 31 (6 high, 21 medium, 4 low) | High | No CloudTrail trail, GuardDuty, Security Hub, Config recorder or Inspector seen in the region, and 15 log-metric alarms that depend on CloudTrail are missing. Whether the organization manages these centrally was not checked. Recommend; out of scope to enable here because of standing cost. |
+| Logging, monitoring and detection | 31 (6 high, 21 medium, 4 low) | High | No CloudTrail trail with logging enabled, and GuardDuty, Security Hub, Inspector and the Config recorder not enabled, in the region; 15 log-metric alarms that depend on CloudTrail are missing. Whether the organization manages these centrally was not checked. Recommend; out of scope to enable here because of standing cost. |
 | IAM: administrator access, MFA, credentials | 15 (1 critical, 6 high, 4 medium, 4 low) | Critical | The `AdministratorAccess` policy is attached; an admin policy sits on a group; two IAM users have long-lived credentials and lack hardware MFA; one cross-service role lacks a confused-deputy condition; unused Bedrock access. Report only. |
 | Other projects' S3 buckets | 16 (9 medium, 7 low) | Medium | Two buckets belonging to other projects: encryption, versioning, TLS-only policy, logging. |
 | IAM password policy | 7 (6 medium, 1 low) | Medium | Length, symbol, number, uppercase, reuse and expiry rules are not met. Account-wide change: show and ask first. |
@@ -223,14 +225,15 @@ plan 20 - 4 + 9 = 25.
   denied `elasticloadbalancing:DescribeLoadBalancerAttributes` to the admin
   user (observed 2026-11-19). The audit role could read the same setting:
   `elbv2_logging_enabled` passed in the after scan. The reason for the
-  difference was not investigated. An earlier note that `ec2:DescribeInstances`
-  was denied was not confirmed: it succeeded as the admin user (the account has
-  no instances), and it was not tested as the audit role.
+  difference was not investigated. `ec2:DescribeInstances` was expected to be
+  denied by the same kind of policy, but it succeeded as the admin user (the
+  account has no instances); it was not tested as the audit role.
 - **RDS-managed secret resource policy.** Prowler could not tell "no policy"
   from "no access". Read as the admin user it showed no policy.
 - **No permission errors** were logged in either Prowler run. That does not
   prove nothing was denied.
-- **Two rows** are in `us-east-1`: Trusted Advisor, served from there.
+- **Two rows** (both scans) are in `us-east-1`: Trusted Advisor, served from
+  there.
 - **Organization-level services** (central CloudTrail, GuardDuty, Security Hub)
   were not checked.
 
@@ -289,7 +292,7 @@ plan 20 - 4 + 9 = 25.
 
 ## 10. Cost
 
-The scans are free. The staging stack cost about $3 a day while it ran (from
-2026-11-17 to 2026-11-19) and was destroyed after the after scans. Nothing is
+The scans are free. The staging stack cost an estimated $3 a day (about $93 a month) while it ran
+(from 2026-11-17 to 2026-11-19) and was destroyed after the after scans. Nothing is
 left running. One manual database snapshot of the production environment was
 kept by decision.
