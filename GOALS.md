@@ -252,9 +252,10 @@ Next, in order:
    buckets confirmed; report draft, `TEMPLATE.md` and README results written.
 3. (Done 2026-11-20) Final read of `report/audit-report.md` (wording fixes in
    `f110843`), then the PDF with `report/make-pdf.sh` (`36023e4`).
-4. Check the whole git history for account IDs, keys and raw scan output, then
-   tick the "no secrets committed" box. Delete the saved plan files in
-   `reports/` (they hold the account ID).
+4. (Done 2026-11-20) History check passed and the "no secrets committed" box
+   is ticked. The 14 saved plan files directly in `reports/` were deleted;
+   `reports/2026-11-17-plan/staging-plan.json` (an early test plan, holds the
+   account ID, git-ignored) is still there.
 5. (Done 2026-11-20) the 4 automated RDS snapshots of the staging DB were gone
    when rechecked; only `ecs-foundation-prod-final` remains.
 
@@ -283,5 +284,5 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 - [x] After scans saved; the report has a before/after table by severity for each tool. _(`reports/2026-11-20-after/`; Checkov severities are matched or judged, the report says which)_
 - [x] `report/audit-report.md` and PDF: summary page, findings by severity, fixes, accepted risks, method and limits; account details redacted. _(PDF made with `report/make-pdf.sh` in a pinned pandoc image; both checked for account IDs, ARNs, IPs and e-mail addresses in the current files. The history check is the last open box)_
 - [x] `report/TEMPLATE.md` exists for client jobs. _(committed `238a98f`)_
-- [ ] No access keys, account IDs or raw scan output committed; staging destroyed after the scans.
+- [x] No access keys, account IDs or raw scan output committed; staging destroyed after the scans. _(history check on all 28 commits on 2026-11-20 with positive controls: no account ID, keys, tokens, raw scan output or unredacted ARNs; only AWS's dummy 123456789012 and `0.0.0.0/0`. The committed PDF was checked too. Staging destroyed by Destroy run `44589344952`. The author e-mail is in `CLAUDE.md` and in every commit's metadata)_
 - [x] README has scope, how to grant access, how to run the scans, the before/after table and links to the report. _(updated 2026-11-20)_

@@ -245,14 +245,19 @@ second scan" story clearer.
   (Decisions 5 to 11 there). `report/audit-report.md`, its PDF, `TEMPLATE.md`
   and the README results are written and committed (PDF `36023e4`, final read
   `f110843`).
-- Still to do: a check of the whole git history for account IDs, keys and raw
-  scan output before ticking the last Definition-of-done box ("no secrets
-  committed"); delete the saved plan files in `reports/` (they hold the account
-  ID). CI shellchecks only `scans/*.sh`, so `report/make-pdf.sh` is not covered
-  by CI (it was checked locally with the pinned ShellCheck).
-- `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
-  `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
-  are git-ignored. Delete them when the work is done.
+- All Definition-of-done boxes are ticked (2026-11-20). The history check ran
+  in bash over all 28 commits with positive controls: clean (a first attempt
+  in zsh gave false "none" results because zsh does not split an unquoted
+  variable; always run such scans with `bash` and show git errors). The 14
+  plan files in `reports/` were deleted; `reports/2026-11-17-plan/staging-plan.json`
+  (git-ignored, holds the account ID) remains.
+- Open for the owner: the commit author e-mail is in this file and in every
+  commit's metadata; GitHub's `noreply` address would avoid it going forward.
+  CI shellchecks only `scans/*.sh`, so `report/make-pdf.sh` is not covered by
+  CI (it was checked locally with the pinned ShellCheck).
+- `reports/` is git-ignored and holds the saved scan folders (baseline, after
+  and early smoke tests), which contain the account ID. Plan files go in
+  `reports/` too and are deleted when used up.
 - This file, `README.md` and `report/checkov-triage-draft.md` are committed
   (`2f486a2`). `GOALS.md` "Progress" lists the pushed fixes. Project 1 is at
   `a9d7511` (SHA pins); this repo is at `3a3b0b7` plus the end-of-session docs
