@@ -5,7 +5,7 @@ done. Every number comes from a saved scan (see Method). Account IDs, ARNs with
 account numbers, IP addresses and e-mail addresses are redacted.
 
 | | |
-|---|---|
+|--------------|--------------------------------------------------------------------------------------|
 | Audited system | A sample AWS foundation: VPC, ECS on Fargate behind an ALB, RDS PostgreSQL, GitHub Actions with OIDC. Code: [AwsEcsFoundationTerraform](https://github.com/joheee/AwsEcsFoundationTerraform) |
 | Account | One AWS account (ID redacted), region `ap-southeast-2` |
 | Baseline scan | 2026-11-18, code at `6a87780` |
@@ -53,7 +53,7 @@ applied to staging through the project's pipeline and verified by the pipeline
 run and, where the setting can be read, with the AWS CLI):
 
 | Fix | Closes |
-|---|---|
+|----------------------------------------|------------------------------------------------------------|
 | RDS logs exported to CloudWatch | Checkov CKV_AWS_129; Prowler `rds_instance_integration_cloudwatch_logs` |
 | RDS query logging through a parameter group | Checkov CKV2_AWS_30 |
 | RDS enhanced monitoring | Checkov CKV_AWS_118; Prowler `rds_instance_enhanced_monitoring_enabled` |
@@ -83,7 +83,7 @@ result rows (one per resource), not distinct checks.
 By owner (same rule in both scans, see Method):
 
 | Group | Before | After |
-|---|---|---|
+|----------------------------------------|-----------------------------------|-------------------------|
 | Audited stack | 31 (0 critical, 9 high, 19 medium, 3 low) | 37 (0, 7, 25, 5) |
 | Log group created by AWS for enhanced monitoring (`RDSOSMetrics`) | 0 | 2 (medium) |
 | The stack's hand-made Terraform state bucket | 9 (5 medium, 4 low) | 9 |
@@ -142,7 +142,7 @@ not evaluate**.
 ### High
 
 | Finding | Evidence | Status | Notes |
-|---|---|---|---|
+|------------------------|----------------------------------|-------------|-----------------------------|
 | Containers have a writable root filesystem (Prowler `ecs_task_definitions_containers_readonly_access`, Checkov CKV_AWS_336) | One container in the staging task definition | Fix later | `readonlyRootFilesystem` plus temporary mounts for the paths nginx writes. The project README had accepted this; the audit rates it high and plans a fix. |
 | CI apply role can escalate privileges (Prowler `iam_inline_policy_allows_privilege_escalation`, 2 rows: staging and production roles) | Flagged actions for staging after the fix: `ecs:CreateService`, `ecs:RegisterTaskDefinition`, `iam:AttachRolePolicy`, `iam:PassRole`, `iam:PutRolePolicy`, `iam:UpdateAssumeRolePolicy` | **Accepted risk.** Staging: narrowed, still flagged. Production: unchanged by decision | The staging role can now change only the environment's four service roles (before it could rewrite roles by name pattern, including its own). The flagged actions remain because the pipeline needs them to deploy. |
 | Database not covered by an AWS Backup plan (`rds_instance_protected_by_backup_plan`) | Automated backups with 7-day retention (staging; production sets 14) exist | Accepted | A backup plan adds standing cost. The check is about a plan, not about having backups. |
@@ -153,7 +153,7 @@ not evaluate**.
 ### Medium
 
 | Finding | Status | Notes |
-|---|---|---|
+|----------------------------------------|----------|--------------------------------------------------|
 | ALB listener is HTTP only (Prowler `elbv2_ssl_listeners`; Checkov CKV_AWS_2, CKV_AWS_103, CKV2_AWS_20, CKV_AWS_378) | Accepted | HTTPS needs a domain and certificate. For a real public app this is high. Path: domain, certificate, 443 listener, redirect from 80. |
 | No WAF on the ALB (`elbv2_waf_acl_attached`, CKV2_AWS_28) | Accepted | Standing cost. Recommended for a real client. |
 | ALB and database deletion protection off, database single-AZ (`elbv2_deletion_protection`, `rds_instance_deletion_protection`, `rds_instance_multi_az`; CKV_AWS_150, CKV_AWS_293, CKV_AWS_157) | Accepted (staging) | Production sets all three. Staging is meant to destroy cleanly. |
@@ -168,7 +168,7 @@ not evaluate**.
 ### Low
 
 | Finding | Status | Notes |
-|---|---|---|
+|----------------------------------------|----------|--------------------------------------------------|
 | Container logging uses the default (blocking) mode (`ecs_task_definitions_logging_block_mode`) | Accepted | Non-blocking can drop logs. |
 | Database uses the default port 5432 (`rds_instance_non_default_port`) | Accepted | The security group, not the port, is the control. |
 | ALB security group allows port 80 from anywhere (CKV_AWS_260) | Accepted | It is the public entry point. |
@@ -191,7 +191,7 @@ These come from the same account but belong to the account itself or to other
 projects. They were not changed. 86 rows, identical before and after.
 
 | Theme | Rows | Highest | What it means |
-|---|---|---|---|
+|------------------|--------------|--------|------------------------------------------------------------|
 | Logging, monitoring and detection | 31 (6 high, 21 medium, 4 low) | High | No CloudTrail trail with logging enabled, and GuardDuty, Security Hub, Inspector and the Config recorder not enabled, in the region; 15 log-metric alarms that depend on CloudTrail are missing. Whether the organization manages these centrally was not checked. Recommend; out of scope to enable here because of standing cost. |
 | IAM: administrator access, MFA, credentials | 15 (1 critical, 6 high, 4 medium, 4 low) | Critical | The `AdministratorAccess` policy is attached; an admin policy sits on a group; two IAM users have long-lived credentials and lack hardware MFA; one cross-service role lacks a confused-deputy condition; unused Bedrock access. Report only. |
 | Other projects' S3 buckets | 16 (9 medium, 7 low) | Medium | Two buckets belonging to other projects: encryption, versioning, TLS-only policy, logging. |
@@ -207,7 +207,7 @@ Fixes add resources, and the new resources fail some checks. They are listed,
 not hidden.
 
 | Fix | New findings | Why they are acceptable |
-|---|---|---|
+|------------------|------------------------------------------|----------------------------------------|
 | ALB access-log bucket | Prowler 8 rows: `s3_bucket_cross_account_access` (high), KMS, MFA delete, versioning, server access logging (medium), replication, event notifications, object lock (low). Checkov CKV_AWS_18 (directory only), CKV_AWS_21, CKV_AWS_144, CKV_AWS_145, CKV2_AWS_62 | A log-only bucket with a 30-day expiry. The cross-account row is the load-balancer service principal that ALB logs require. ALB logs support SSE-S3 only. |
 | RDS log exports | Four log-group rows (KMS, retention on the two new groups); Checkov CKV_AWS_158 and CKV_AWS_338 | AWS-managed encryption; short retention to limit cost. |
 | RDS enhanced monitoring | Two rows on `RDSOSMetrics` (created by AWS) | Not in the Terraform code. |
@@ -222,8 +222,8 @@ plan 20 - 4 + 9 = 25.
   contact, security questions, two KMS enclave checks and Trusted Advisor
   errors. All need a human or a console check.
 - **Service control policy.** Before the after scan, an organization policy
-  denied `elasticloadbalancing:DescribeLoadBalancerAttributes` to the admin
-  user (observed 2026-11-19). The audit role could read the same setting:
+  denied the Elastic Load Balancing call `DescribeLoadBalancerAttributes` to the
+  admin user (observed 2026-11-19). The audit role could read the same setting:
   `elbv2_logging_enabled` passed in the after scan. The reason for the
   difference was not investigated. `ec2:DescribeInstances` was expected to be
   denied by the same kind of policy, but it succeeded as the admin user (the
@@ -280,7 +280,7 @@ plan 20 - 4 + 9 = 25.
 ## 9. Fix log (audited stack, one commit per change)
 
 | Commit | Change |
-|---|---|
+|----------------|------------------------------------------------------------------------------------|
 | `3c792fb` | CI apply role IAM writes limited to the environment's service roles |
 | `e51ea0e` | RDS logs exported to CloudWatch (CKV_AWS_129) |
 | `e101810` | RDS query logging through a parameter group (CKV2_AWS_30) |

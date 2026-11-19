@@ -1,0 +1,9 @@
+% Included by make-pdf.sh. Smaller table text, and let long check names such
+% as rds_instance_integration_cloudwatch_logs break at underscores.
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}
+\renewcommand{\_}{\textunderscore\allowbreak{}}
+% Keep a small heading together with the table that follows it: start a new
+% page when less than 8 lines are left.
+\pretocmd{\subsubsection}{\par\ifdim\dimexpr\pagegoal-\pagetotal\relax<8\baselineskip\ifdim\pagegoal<\maxdimen\newpage\fi\fi}{}{}
+\AtBeginDocument{\let\origsubsection\subsection\renewcommand{\subsection}{\par\ifdim\dimexpr\pagegoal-\pagetotal\relax<10\baselineskip\ifdim\pagegoal<\maxdimen\newpage\fi\fi\origsubsection}}
