@@ -194,15 +194,18 @@ second scan" story clearer.
 - Confused-deputy conditions (`aws:SourceAccount` and `aws:SourceArn`) on the
   staging `ecs-execution`, `ecs-task` and `vpc-flow-logs` trust policies are
   project 1 `5c52501`. Workflow run `44575339368` passed (3 changed); trust
-  policies verified with the AWS CLI. Not yet checked: a new ECS task starting
-  and flow logs delivering under the new conditions. No policy change was
-  needed (the apply role can already update these roles' trust policies).
+  policies verified with the AWS CLI. A forced ECS deployment then started a
+  new task (health checks passed, no AccessDenied in the service log) and
+  1,916 flow log records ended after the change (delivery `SUCCESS`). The task
+  role was not exercised separately. No policy change was needed (the apply
+  role can already update these roles' trust policies).
 - Second observed SCP deny: `elasticloadbalancing:DescribeLoadBalancerAttributes`
   returned an explicit deny in an SCP for the admin user (2026-11-19). Not
   worked around. Report as observed; a check that needs it is "could not
   evaluate". Not tested as the audit role.
-- Still to do, in order: check a new ECS task and flow log delivery; GitHub
-  Actions SHA pins; decide the prod apply role policy; triage "to confirm"
+- GitHub Actions SHA pins are project 1 `a9d7511` (all 11 `uses:` lines, exact
+  version in a comment). Run `44579607339` passed with "No changes".
+- Still to do, in order: decide the prod apply role policy; triage "to confirm"
   rows; after scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.

@@ -171,8 +171,14 @@ Done:
   - `5c52501`: confused-deputy conditions on the staging ECS execution, ECS
     task and VPC flow-logs roles (Prowler
     `iam_role_cross_service_confused_deputy_prevention`, no Checkov check).
-    Run `44575339368`. Trust policies verified; a new task start and flow log
-    delivery are not checked yet.
+    Run `44575339368`. Trust policies verified. On 2026-11-19 a forced ECS
+    deployment started a new task and passed health checks, and 1,916 flow
+    log records ended after the change (delivery `SUCCESS`). The task role
+    itself was not exercised separately (the sample app calls no AWS APIs).
+  - `a9d7511`: all 11 `uses:` lines in project 1's two workflows pinned to
+    commit SHAs, exact version in a comment (hand-found, no check ID; neither
+    Checkov nor Prowler flags it). Run `44579607339` passed: plan "No changes",
+    apply 0 changed.
   The prod apply role still has the old broad policy. The after scan decides
   whether Prowler still flags the apply role.
 
@@ -207,18 +213,15 @@ confirm" in the draft).
 
 Next, in order:
 
-1. Check that a new ECS task starts and VPC flow logs deliver under the new
-   confused-deputy conditions (`5c52501`).
-2. Remaining fixes, one commit per change in project 1, each applied to
-   staging: GitHub Actions pinned to commit SHAs (hand-found, no check ID).
-   Decide on the prod apply role (local prod apply of that one policy, ask
-   first).
-3. Finish the triage (resolve the "to confirm" rows, diff the plan failures
+1. Decide on the prod apply role (local prod apply of that one policy, ask
+   first). Any other remaining fix is one commit per change in project 1,
+   applied to staging.
+2. Finish the triage (resolve the "to confirm" rows, diff the plan failures
    against the directory failures).
-4. After scans with the same commands and versions (label `after`, same
+3. After scans with the same commands and versions (label `after`, same
    `--plan-json` approach), before/after table, report, PDF, `TEMPLATE.md`,
    README results.
-5. Destroy staging the same day the after scans finish. It has been running
+4. Destroy staging the same day the after scans finish. It has been running
    since 2026-11-17, about $3 a day. Check the `ecs-foundation-prod-final`
    snapshot decision first.
 
