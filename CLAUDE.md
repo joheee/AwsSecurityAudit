@@ -222,8 +222,8 @@ second scan" story clearer.
   the repo). Checkov: Terraform 235/23, GitHub Actions 118/2, plan 180/25
   (4 closed, 9 introduced in each of Terraform and plan). Prowler: 134 FAIL
   (1 critical, 21 high, 80 medium, 32 low), 301 PASS, 6 MANUAL; 6 closed, 14
-  introduced (ALB log bucket 11 rows incl. `s3_bucket_cross_account_access`
-  high from the ELB principal, 3 log-group rows incl. AWS-created
+  introduced (ALB log bucket 8 rows incl. `s3_bucket_cross_account_access`
+  high from the ELB principal, 6 log-group rows incl. 2 on AWS-created
   `RDSOSMetrics`). The staging apply role STILL fails
   `iam_inline_policy_allows_privilege_escalation` (`iam:CreatePolicyVersion`
   dropped from the flagged list, 6 actions remain); say so, do not claim it

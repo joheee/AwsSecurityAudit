@@ -222,8 +222,9 @@ GitHub Actions 118/2 to 118/2, plan 152/20 to 180/25; Prowler FAIL 126 to 134
 301, MANUAL 6 to 6. Closed: Checkov 4 (CKV_AWS_91, 118, 129, CKV2_AWS_30) and
 Prowler 6 (3 confused-deputy, ALB logging, RDS log export, enhanced
 monitoring). Introduced by fixes: Checkov 9 in each of Terraform and plan;
-Prowler 14 (ALB log bucket 11 rows including `s3_bucket_cross_account_access`
-high, 3 log-group rows including AWS-created `RDSOSMetrics`). Not closed: the
+Prowler 14 (ALB log bucket 8 rows including `s3_bucket_cross_account_access`
+high, 6 log-group rows: 4 on the two new RDS log groups and 2 on AWS-created
+`RDSOSMetrics`). Not closed: the
 staging apply role still fails `iam_inline_policy_allows_privilege_escalation`
 (6 actions still flagged, `iam:CreatePolicyVersion` removed). The Checkov plan
 scan also has a new CKV2_AWS_69 (cause not confirmed). Staging destroyed

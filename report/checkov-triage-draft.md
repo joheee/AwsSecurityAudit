@@ -220,3 +220,76 @@ only.
   confirmed. Not yet tested as the `security-audit` role.
 - 2 rows are `us-east-1`: both Trusted Advisor, whose API is served from there.
 - Do not call any check passed or failed beyond what is in the CSV.
+
+---
+
+# Analysis from the saved scans (2026-11-20)
+
+Sources: `reports/2026-11-18-baseline/` (project 1 `6a87780`) and
+`reports/2026-11-20-after/` (project 1 `9f8c0be`), same commands and pins.
+
+## Checkov: plan scan versus directory scan
+
+By check ID, both before and after:
+
+| | Directory scan | Plan scan |
+|---|---|---|
+| Before | 18 failures, 16 checks | 20 failures, 17 checks |
+| After | 23 failures, 17 checks | 25 failures, 18 checks |
+
+- **Only in the directory scan:** CKV_AWS_354 and CKV_AWS_394 (before and after),
+  plus CKV_AWS_18 after. The plan scan does not evaluate data sources
+  (CKV_AWS_394); the other two are not flagged by the plan scan.
+- **Only in the plan scan:** CKV_AWS_150, CKV_AWS_157 and CKV_AWS_293 (staging
+  values: ALB and DB deletion protection off, single-AZ DB; prod sets the safe
+  values), plus CKV2_AWS_69 after.
+- **Same check, different count:** CKV_AWS_260 is 1 in the directory scan (the
+  ingress rule) and 2 in the plan scan (the rule and the security group that
+  holds it). It is one finding reported twice.
+- **Reconciliation:** before, the plan scan has 3 plan-only checks plus the
+  doubled CKV_AWS_260 (+4) and the directory scan has 2 directory-only checks
+  (-2), so 20 versus 18. After: 4 plan-only checks plus the double (+5), minus
+  3 directory-only checks, so 25 versus 23.
+- The two scans are not added together; each is reported on its own.
+
+**CKV2_AWS_69** (RDS encryption in transit) passed in both baseline scans and
+fails only in the after plan scan. The parameter group added for CKV2_AWS_30
+(`e101810`) sets `log_statement` and `log_min_duration_statement` but not
+`rds.force_ssl`, so Checkov can no longer see the default. It is introduced by
+a fix. Whether the instance enforced TLS in practice was not checked live
+(staging is destroyed); the engine default may already require it. Cheap fix
+for later: set `rds.force_ssl = 1` explicitly in the parameter group.
+
+## Prowler: owner split of FAIL rows
+
+Rule (applied to `RESOURCE_NAME`, `RESOURCE_UID` and `RESOURCE_TAGS`): the
+project 1 state bucket `joheee-ecs-foundation-tfstate` is its own group; a row
+is "project 1" if it mentions `ecs-foundation`, or is the staging VPC
+(`vpc-02b7...`) or its default network ACL (`acl-061b...`); `RDSOSMetrics` is
+shown separately because AWS creates it; everything else is account level or
+other projects.
+
+| Group | Before: rows (crit/high/med/low) | After: rows (crit/high/med/low) |
+|---|---|---|
+| Project 1 | 31 (0/9/19/3) | 37 (0/7/25/5) |
+| `RDSOSMetrics` (AWS-created, from enhanced monitoring) | 0 | 2 (0/0/2/0) |
+| Project 1 state bucket | 9 (0/0/5/4) | 9 (0/0/5/4) |
+| Account level and other projects | 86 (1/14/48/23) | 86 (1/14/48/23) |
+| **Total** | **126** | **134** |
+
+- The account-level and other-projects group is identical before and after, as
+  expected: nothing outside project 1 was changed.
+- The earlier draft said 25 project 1 rows (7 high, 15 medium, 3 low). That
+  counted by name only. The 6 extra rows are the staging VPC's default network
+  ACL (3 rows), `networkfirewall_in_all_vpc`, `vpc_endpoint_for_ec2_enabled` and
+  the RDS-managed secret (tagged for the project). Use 31.
+- Project 1 changes: 6 closed (3 high, 2 medium, 1 low), 12 introduced (8 on
+  the ALB log bucket, 4 on the two new RDS log groups), net +6. Plus 2 rows on
+  `RDSOSMetrics`.
+- The 8 ALB log bucket rows: `s3_bucket_cross_account_access` (high, the
+  regional ELB principal that ALB logs require), `s3_bucket_kms_encryption`,
+  `s3_bucket_no_mfa_delete`, `s3_bucket_object_versioning`,
+  `s3_bucket_server_access_logging_enabled` (medium), and
+  `s3_bucket_cross_region_replication`, `s3_bucket_event_notifications_enabled`,
+  `s3_bucket_object_lock` (low). Proposed bucket: accepted, log-only bucket;
+  SSE-S3 only is a limit of ALB access logs.
