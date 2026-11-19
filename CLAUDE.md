@@ -213,9 +213,13 @@ second scan" story clearer.
   decisions. Both failing NACLs are default ACLs: one in project 1's VPC, one in
   the account's default VPC. The `ecs-foundation-prod` cluster does not exist;
   its container-insights log group is a leftover (do not delete unasked).
+- RDS Extended Support fix was tried and reverted (`315c976`, `af507da`,
+  `9f8c0be`): the live `EngineLifecycleSupport` never changed. Not fixed; do
+  not retry on the existing instance. Prod snapshot decision 2026-11-19: keep
+  `ecs-foundation-prod-final` for now (destroy staging without touching it).
 - Still to do, in order: diff plan-JSON and directory failures; get the user's
-  decisions (proposed buckets, account-level fixes in scope or report-only,
-  `engine_lifecycle_support`, default NACL); re-measure the owner split; after
+  decisions (proposed buckets; account-level fixes and the default NACL will
+  be recommendations, not fixes, as agreed 2026-11-19); re-measure the owner split; after
   scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.

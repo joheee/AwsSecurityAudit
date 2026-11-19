@@ -179,6 +179,10 @@ Done:
     commit SHAs, exact version in a comment (hand-found, no check ID; neither
     Checkov nor Prowler flags it). Run `44579607339` passed: plan "No changes",
     apply 0 changed.
+  - `315c976`, `af507da`, reverted by `9f8c0be`: tried to disable RDS Extended
+    Support (`rds_instance_extended_support`). The workflow passed but the live
+    value did not change (even with `apply_immediately`), so it is **not fixed**
+    and not counted. Staging plan is "No changes" again (run `44584815581`).
   The prod apply role still has the old broad policy. The after scan decides
   whether Prowler still flags the apply role.
 
@@ -216,8 +220,7 @@ Security Hub centrally; where staging was deployed from (local or workflow);
 what to do with the prod snapshot; whether the account-level S3 public access
 block and IAM password policy are in scope as fixes or report-only (decide
 before the after scan; both change the whole account, show and ask first);
-whether to fix `engine_lifecycle_support` in project 1 or leave it in Fix
-later; the project 1 default NACL (Accepted or Fix later); and the user has
+the project 1 default NACL (Accepted or Fix later); and the user has
 not yet confirmed any of the proposed buckets above.
 
 Next, in order:
