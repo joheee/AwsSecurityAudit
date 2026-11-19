@@ -208,12 +208,21 @@ second scan" story clearer.
 - Prod apply role: decided 2026-11-19 to leave the old policy and report it as
   a known difference. Do not plan or apply it unless asked again. The after
   scan will still flag it for prod.
-- Still to do, in order: triage "to confirm"
-  rows; after scans; report; destroy staging.
+- "To confirm" rows were checked on 2026-11-19 and are in
+  `report/checkov-triage-draft.md` (`3a3b0b7`) as proposed buckets, not
+  decisions. Both failing NACLs are default ACLs: one in project 1's VPC, one in
+  the account's default VPC. The `ecs-foundation-prod` cluster does not exist;
+  its container-insights log group is a leftover (do not delete unasked).
+- Still to do, in order: diff plan-JSON and directory failures; get the user's
+  decisions (proposed buckets, account-level fixes in scope or report-only,
+  `engine_lifecycle_support`, default NACL); re-measure the owner split; after
+  scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.
 - `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
   `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
   are git-ignored. Delete them when the work is done.
 - This file, `README.md` and `report/checkov-triage-draft.md` are committed
-  (`2f486a2`). `GOALS.md` "Progress" lists the pushed fixes.
+  (`2f486a2`). `GOALS.md` "Progress" lists the pushed fixes. Project 1 is at
+  `a9d7511` (SHA pins); this repo is at `3a3b0b7` plus the end-of-session docs
+  commit. Needs a fresh `aws login` next session (the CLI session expires).

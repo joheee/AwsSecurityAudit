@@ -203,13 +203,22 @@ Found along the way:
   later instead (`readonlyRootFilesystem` plus tmpfs for nginx). The report
   must say it differs.
 
+"To confirm" rows resolved on 2026-11-19 (evidence and **proposed** buckets in
+`report/checkov-triage-draft.md`, committed `3a3b0b7`): no AWS Backup plan but
+7-day automated backups; RDS enrolled in Extended Support (engine 17.9, end of
+standard support not verified); the RDS-managed secret has no resource policy
+(as the admin user, not tested as the audit role); the 2 failing NACLs are both
+VPC default ACLs, one in project 1's VPC and one in the account's default VPC;
+the prod container-insights log group is a leftover (no prod cluster exists).
+
 Open: the day-1 check of whether the org manages CloudTrail, GuardDuty or
 Security Hub centrally; where staging was deployed from (local or workflow);
 what to do with the prod snapshot; whether the account-level S3 public access
-block and IAM password policy are in scope as fixes or report-only; which VPC
-the 2 failing network ACLs and the network-firewall finding belong to; RDS
-backup retention, engine version and the managed-secret policy (all marked "to
-confirm" in the draft).
+block and IAM password policy are in scope as fixes or report-only (decide
+before the after scan; both change the whole account, show and ask first);
+whether to fix `engine_lifecycle_support` in project 1 or leave it in Fix
+later; the project 1 default NACL (Accepted or Fix later); and the user has
+not yet confirmed any of the proposed buckets above.
 
 Next, in order:
 
@@ -218,8 +227,10 @@ Next, in order:
    broad policy, so the after scan will still flag
    `iam_inline_policy_allows_privilege_escalation` for it). The staging role is
    fixed in `3c792fb`.
-2. Finish the triage (resolve the "to confirm" rows, diff the plan failures
-   against the directory failures).
+2. Finish the triage: diff the plan-JSON failures (20) against the directory
+   failures (18) line by line (not done), get the user's decision on the
+   proposed buckets, then re-measure the project 1 versus other split from the
+   CSV (the project 1 default NACL adds rows).
 3. After scans with the same commands and versions (label `after`, same
    `--plan-json` approach), before/after table, report, PDF, `TEMPLATE.md`,
    README results.
