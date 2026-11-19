@@ -164,8 +164,15 @@ Done:
   - `5b0232f` and `056cb9c`: RDS enhanced monitoring (CKV_AWS_118); run #15
     failed on the PassRole condition, `056cb9c` fixed it in run #16.
   - `5403238` ("feat: fix error ecs"): ALB access logs to a locked S3 bucket
-    (CKV_AWS_91) plus the apply role's S3 permissions. Pushed; no workflow
-    run yet, so not applied to staging.
+    (CKV_AWS_91), applied on 2026-11-19 (run `44573826722`) after the apply
+    and plan role policies were applied locally. Bucket settings checked with
+    the CLI; the ALB `access_logs` attribute could not be read (SCP deny on
+    `DescribeLoadBalancerAttributes`), so the evidence is the ELB test object.
+  - `5c52501`: confused-deputy conditions on the staging ECS execution, ECS
+    task and VPC flow-logs roles (Prowler
+    `iam_role_cross_service_confused_deputy_prevention`, no Checkov check).
+    Run `44575339368`. Trust policies verified; a new task start and flow log
+    delivery are not checked yet.
   The prod apply role still has the old broad policy. The after scan decides
   whether Prowler still flags the apply role.
 
@@ -200,13 +207,12 @@ confirm" in the draft).
 
 Next, in order:
 
-1. CKV_AWS_91 (`5403238`): plan the staging apply-role policy, the user
-   applies it locally, then run the workflow on staging and check with the
-   AWS CLI.
-2. Remaining fixes, one commit per check ID in project 1, each applied to
-   staging: confused-deputy conditions on the staging roles; GitHub Actions
-   pinned to commit SHAs (hand-found, no check ID). Decide on the prod apply
-   role (local prod apply of that one policy, ask first).
+1. Check that a new ECS task starts and VPC flow logs deliver under the new
+   confused-deputy conditions (`5c52501`).
+2. Remaining fixes, one commit per change in project 1, each applied to
+   staging: GitHub Actions pinned to commit SHAs (hand-found, no check ID).
+   Decide on the prod apply role (local prod apply of that one policy, ask
+   first).
 3. Finish the triage (resolve the "to confirm" rows, diff the plan failures
    against the directory failures).
 4. After scans with the same commands and versions (label `after`, same

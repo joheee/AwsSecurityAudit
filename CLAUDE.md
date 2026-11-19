@@ -184,17 +184,30 @@ second scan" story clearer.
   (CKV_AWS_129), `e101810` (CKV2_AWS_30), `5b0232f` and `056cb9c`
   (CKV_AWS_118; the second fixes the PassRole condition). Workflow runs
   `44338832844`, `44343361441`, `44349042312` passed.
-- CKV_AWS_91 (ALB access logs to a locked S3 bucket) is **committed and pushed
-  as project 1 `5403238`** ("feat: fix error ecs"), together with the apply
-  role's S3 permissions. No workflow run yet, so it is not applied. An ad-hoc
-  Checkov run no longer fails CKV_AWS_91.
-- Still to do, in order: plan and have the user apply the staging policy for
-  CKV_AWS_91, then run the workflow; confused-deputy conditions on the
-  staging roles; GitHub Actions SHA pins; decide the prod apply role policy;
-  triage "to confirm" rows; after scans; report; destroy staging.
+- CKV_AWS_91 (ALB access logs to a locked S3 bucket) is project 1 `5403238`
+  ("feat: fix error ecs"), with the apply and plan roles' S3 permissions. The
+  user applied the policy locally (`policy-alblogs.tfplan`), then workflow run
+  `44573826722` passed (6 added, 1 changed). Verified with the AWS CLI: bucket
+  public access block, SSE-S3, 30-day lifecycle, TLS-only policy and the
+  `ELBAccessLogTestFile` object. The ALB `access_logs` attribute could not be
+  read (see the SCP note below), so that part is indirect evidence.
+- Confused-deputy conditions (`aws:SourceAccount` and `aws:SourceArn`) on the
+  staging `ecs-execution`, `ecs-task` and `vpc-flow-logs` trust policies are
+  project 1 `5c52501`. Workflow run `44575339368` passed (3 changed); trust
+  policies verified with the AWS CLI. Not yet checked: a new ECS task starting
+  and flow logs delivering under the new conditions. No policy change was
+  needed (the apply role can already update these roles' trust policies).
+- Second observed SCP deny: `elasticloadbalancing:DescribeLoadBalancerAttributes`
+  returned an explicit deny in an SCP for the admin user (2026-11-19). Not
+  worked around. Report as observed; a check that needs it is "could not
+  evaluate". Not tested as the audit role.
+- Still to do, in order: check a new ECS task and flow log delivery; GitHub
+  Actions SHA pins; decide the prod apply role policy; triage "to confirm"
+  rows; after scans; report; destroy staging.
 - Staging is still running and costing about $3 a day (since 2026-11-17).
   The `ecs-foundation-prod-final` snapshot decision comes before the destroy.
-- `reports/` holds saved plan files (`policy-*.tfplan`, `*.tfplan`). They
-  contain the account ID and are git-ignored. Delete them when the work is done.
+- `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
+  `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
+  are git-ignored. Delete them when the work is done.
 - This file, `README.md` and `report/checkov-triage-draft.md` are committed
   (`2f486a2`). `GOALS.md` "Progress" lists the pushed fixes.
