@@ -1,7 +1,8 @@
 # AWS Security Audit: sample report
 
-**DRAFT.** Triage buckets marked *(proposed)* are not yet confirmed by the
-owner. Every number comes from a saved scan (see Method). Account IDs, ARNs with
+**DRAFT.** The triage buckets were confirmed by the owner on 2026-11-20; the
+text has not had a final read. Every number comes from a saved scan (see
+Method). Account IDs, ARNs with
 account numbers, IP addresses and e-mail addresses are redacted.
 
 | | |
@@ -15,8 +16,8 @@ account numbers, IP addresses and e-mail addresses are redacted.
 
 ## 1. Summary
 
-**Overall rating (proposed): moderate for the audited stack, needs attention at
-account level.** The audited stack has no public data store: the database is
+**Overall rating: moderate for the audited stack, needs attention at account
+level.** The audited stack has no public data store: the database is
 private and reachable only from the application's security group. The main
 open points are plain HTTP on the load balancer (accepted in this sample), a
 CI deploy role that Prowler still flags for privilege escalation, and a
@@ -134,18 +135,18 @@ in the plan scan for one rule.
 ## 3. Findings on the audited stack
 
 Status: **Fixed**, **Fix later**, **Accepted** (with the reason) or **Could
-not evaluate**. Buckets other than Fixed are *(proposed)*.
+not evaluate**.
 
 ### High
 
 | Finding | Evidence | Status | Notes |
 |---|---|---|---|
-| Containers have a writable root filesystem (Prowler `ecs_task_definitions_containers_readonly_access`, Checkov CKV_AWS_336) | One container in the staging task definition | Fix later *(proposed)* | `readonlyRootFilesystem` plus temporary mounts for the paths nginx writes. The project README had accepted this; the audit rates it high and plans a fix. |
-| CI apply role can escalate privileges (Prowler `iam_inline_policy_allows_privilege_escalation`, 2 rows: staging and production roles) | Flagged actions for staging after the fix: `ecs:CreateService`, `ecs:RegisterTaskDefinition`, `iam:AttachRolePolicy`, `iam:PassRole`, `iam:PutRolePolicy`, `iam:UpdateAssumeRolePolicy` | Staging: narrowed, **still open**. Production: unchanged by decision | The staging role can now change only the environment's four service roles (before it could rewrite roles by name pattern, including its own). The flagged actions remain because the pipeline needs them to deploy. Accepted-risk wording to confirm. |
-| Database not covered by an AWS Backup plan (`rds_instance_protected_by_backup_plan`) | Automated backups with 7-day retention (staging; production sets 14) exist | Accepted *(proposed)* | A backup plan adds standing cost. The check is about a plan, not about having backups. |
-| RDS-managed secret has no restrictive resource policy (`secretsmanager_has_restrictive_resource_policy`) | No resource policy on the secret when read as the admin user | Accepted *(proposed)* | Access is by IAM only. Not tested as the audit role, so partly could-not-evaluate. |
-| Default network ACL allows all inbound (`ec2_networkacl_allow_ingress_any_port`) | The staging VPC's default ACL | Accepted or fix later *(proposed)* | Security groups are the control; the ALB is the only public entry. Could be managed in Terraform. |
-| Bucket policy allows another AWS account (`s3_bucket_cross_account_access`, ALB log bucket) | The regional load-balancer service principal | Accepted *(proposed)* | Required for ALB access logs. **Introduced by a fix.** |
+| Containers have a writable root filesystem (Prowler `ecs_task_definitions_containers_readonly_access`, Checkov CKV_AWS_336) | One container in the staging task definition | Fix later | `readonlyRootFilesystem` plus temporary mounts for the paths nginx writes. The project README had accepted this; the audit rates it high and plans a fix. |
+| CI apply role can escalate privileges (Prowler `iam_inline_policy_allows_privilege_escalation`, 2 rows: staging and production roles) | Flagged actions for staging after the fix: `ecs:CreateService`, `ecs:RegisterTaskDefinition`, `iam:AttachRolePolicy`, `iam:PassRole`, `iam:PutRolePolicy`, `iam:UpdateAssumeRolePolicy` | **Accepted risk.** Staging: narrowed, still flagged. Production: unchanged by decision | The staging role can now change only the environment's four service roles (before it could rewrite roles by name pattern, including its own). The flagged actions remain because the pipeline needs them to deploy. |
+| Database not covered by an AWS Backup plan (`rds_instance_protected_by_backup_plan`) | Automated backups with 7-day retention (staging; production sets 14) exist | Accepted | A backup plan adds standing cost. The check is about a plan, not about having backups. |
+| RDS-managed secret has no restrictive resource policy (`secretsmanager_has_restrictive_resource_policy`) | No resource policy on the secret when read as the admin user | Accepted | Access is by IAM only. Not tested as the audit role, so partly could-not-evaluate. |
+| Default network ACL allows all inbound (`ec2_networkacl_allow_ingress_any_port`) | The staging VPC's default ACL | Accepted | Security groups are the control; the ALB is the only public entry. It is a default ACL, not managed in Terraform; it could be locked down with `aws_default_network_acl`. |
+| Bucket policy allows another AWS account (`s3_bucket_cross_account_access`, ALB log bucket) | The regional load-balancer service principal | Accepted | Required for ALB access logs. **Introduced by a fix.** |
 
 ### Medium
 
@@ -156,29 +157,29 @@ not evaluate**. Buckets other than Fixed are *(proposed)*.
 | ALB and database deletion protection off, database single-AZ (`elbv2_deletion_protection`, `rds_instance_deletion_protection`, `rds_instance_multi_az`; CKV_AWS_150, CKV_AWS_293, CKV_AWS_157) | Accepted (staging) | Production sets all three. Staging is meant to destroy cleanly. |
 | ECS Container Insights off in staging (`ecs_cluster_container_insights_enabled`, CKV_AWS_65) | Accepted | Cost; production turns it on. |
 | Log groups not KMS-encrypted and without a long retention (10 rows: `cloudwatch_log_group_kms_encryption_enabled`, `..._retention_policy_specific_days_enabled`; CKV_AWS_158, CKV_AWS_338) | Accepted | Five groups: the service, flow-log and two RDS groups, plus a leftover from an earlier production run. AWS-managed encryption is in use; a customer key adds cost. Retention is 14 days in staging by design. Four of the rows are **introduced by fixes**. |
-| RDS enrolled in Extended Support (`rds_instance_extended_support`) | Fix later *(proposed)* | A fix was attempted: the setting was accepted by Terraform but the live value did not change, even with immediate apply, so it was reverted. Not fixed. Cause not confirmed; the only route not ruled out is setting it when the instance is created. |
-| Default ACL allows SSH and RDP from anywhere (`ec2_networkacl_allow_ingress_tcp_port_22`, `..._3389`) | Accepted or fix later *(proposed)* | Same ACL as above; no instance in the stack listens on those ports. |
-| No Network Firewall; no VPC endpoint for EC2 (`networkfirewall_in_all_vpc`, `vpc_endpoint_for_ec2_enabled`) | Accepted *(proposed)* | Standing cost; out of scope for a sample. |
-| ALB log bucket: no KMS, MFA delete, versioning or access logging (4 rows) | Accepted *(proposed)* | **Introduced by a fix.** Log-only bucket; ALB logs support SSE-S3 only (not KMS). Objects expire after 30 days. |
-| `RDSOSMetrics` log group not encrypted or limited in retention (2 rows) | Accepted *(proposed)* | Created automatically by AWS when enhanced monitoring is on. **Introduced by a fix.** |
+| RDS enrolled in Extended Support (`rds_instance_extended_support`) | Fix later | A fix was attempted: the setting was accepted by Terraform but the live value did not change, even with immediate apply, so it was reverted. Not fixed. Cause not confirmed; the only route not ruled out is setting it when the instance is created. |
+| Default ACL allows SSH and RDP from anywhere (`ec2_networkacl_allow_ingress_tcp_port_22`, `..._3389`) | Accepted | Same ACL as above; no instance in the stack listens on those ports. |
+| No Network Firewall; no VPC endpoint for EC2 (`networkfirewall_in_all_vpc`, `vpc_endpoint_for_ec2_enabled`) | Accepted | Standing cost; out of scope for a sample. |
+| ALB log bucket: no KMS, MFA delete, versioning or access logging (4 rows) | Accepted | **Introduced by a fix.** Log-only bucket; ALB logs support SSE-S3 only (not KMS). Objects expire after 30 days. |
+| `RDSOSMetrics` log group not encrypted or limited in retention (2 rows) | Accepted | Created automatically by AWS when enhanced monitoring is on. **Introduced by a fix.** |
 
 ### Low
 
 | Finding | Status | Notes |
 |---|---|---|
-| Container logging uses the default (blocking) mode (`ecs_task_definitions_logging_block_mode`) | Accepted *(proposed)* | Non-blocking can drop logs. |
-| Database uses the default port 5432 (`rds_instance_non_default_port`) | Accepted *(proposed)* | The security group, not the port, is the control. |
+| Container logging uses the default (blocking) mode (`ecs_task_definitions_logging_block_mode`) | Accepted | Non-blocking can drop logs. |
+| Database uses the default port 5432 (`rds_instance_non_default_port`) | Accepted | The security group, not the port, is the control. |
 | ALB security group allows port 80 from anywhere (CKV_AWS_260) | Accepted | It is the public entry point. |
 | RDS Performance Insights not KMS-encrypted (CKV_AWS_354) | Accepted | AWS-managed key in use; cost. |
 | `aws_availability_zones` data source does not pin zone identity (CKV_AWS_394) | Accepted | Style check on a data source; not a deployed-resource risk. |
 | GitHub Actions workflow inputs (CKV_GHA_7, two workflows) | Accepted | The inputs select an environment; they do not change build output. |
-| ALB log bucket: no replication, event notifications or object lock (3 rows) | Accepted *(proposed)* | **Introduced by a fix.** |
+| ALB log bucket: no replication, event notifications or object lock (3 rows) | Accepted | **Introduced by a fix.** |
 
 ### The stack's Terraform state bucket (hand-made, outside Terraform)
 
 Nine rows (5 medium, 4 low): no KMS key, MFA delete, versioning, TLS-only
 policy or access logging, and no replication, notifications, lifecycle or
-object lock. Proposed: versioning and the TLS-only policy are **fix later**
+object lock. Versioning and the TLS-only policy are **fix later**
 (recovery from a bad state write, and TLS); the rest are accepted for a
 one-person sample.
 

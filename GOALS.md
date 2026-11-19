@@ -235,8 +235,11 @@ Security Hub centrally; where staging was deployed from (local or workflow);
 what to do with the prod snapshot; whether the account-level S3 public access
 block and IAM password policy are in scope as fixes or report-only (decide
 before the after scan; both change the whole account, show and ask first);
-the project 1 default NACL (Accepted or Fix later); and the user has
-not yet confirmed any of the proposed buckets above.
+and whether the report text needs a final read before the PDF. The
+proposed buckets were confirmed on 2026-11-20 (default NACL: Accepted;
+state bucket: versioning and TLS-only policy Fix later, rest Accepted; CI
+apply role: Accepted risk; rating: moderate). The account-level fixes stay
+recommendations, as agreed.
 
 Next, in order:
 
@@ -245,13 +248,13 @@ Next, in order:
    broad policy, so the after scan will still flag
    `iam_inline_policy_allows_privilege_escalation` for it). The staging role is
    fixed in `3c792fb`.
-2. Finish the triage: diff the plan-JSON failures against the directory
-   failures line by line (not done), get the user's decision on the proposed
-   buckets, then re-measure the project 1 versus other split from both CSVs
-   (the project 1 default NACL adds rows).
-3. Before/after tables, report, PDF, `TEMPLATE.md`, README results. The after
-   scans are saved (see Progress). No AWS access is needed for this.
-4. Delete the saved plan files in `reports/` (they hold the account ID).
+2. (Done 2026-11-20) Triage: plan versus directory diff, owner split and all
+   buckets confirmed; report draft, `TEMPLATE.md` and README results written.
+3. A final read of `report/audit-report.md`, then the PDF (check pandoc and a
+   PDF engine), then tick the report-and-PDF box.
+4. Check the whole git history for account IDs, keys and raw scan output, then
+   tick the "no secrets committed" box. Delete the saved plan files in
+   `reports/` (they hold the account ID).
 5. (Done 2026-11-20) the 4 automated RDS snapshots of the staging DB were gone
    when rechecked; only `ecs-foundation-prod-final` remains.
 
@@ -275,10 +278,10 @@ CloudFormation (role template) · Docker · Bash · GitHub Actions · pandoc
 - [x] `audit-role/` creates a read-only `security-audit` role (SecurityAudit, ViewOnlyAccess, Prowler additions) that needs MFA; CloudFormation copy included. _(Terraform applied; MFA assume-role works and `iam:CreateUser` is denied. The CloudFormation copy is linted, not deployed)_
 - [x] `scans/prowler.sh` and `scans/checkov.sh` run with pinned image digests and write to `reports/<date>-<label>/`. _(Prowler smoke scan `smoke2`: 668 of 675 checks in 4:32; Checkov matches project 1's README, 18 failed / 195 passed)_
 - [x] Baseline scans saved for project 1 at a named commit, with counts by severity. _(`reports/2026-11-18-baseline/`, project 1 `6a87780`. Prowler has severities; Checkov has pass/fail counts only)_
-- [ ] Every failed finding is triaged: fix now, fix later, accepted risk (with reason) or could not evaluate (with reason).
-- [ ] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo.
-- [ ] After scans saved; the report has a before/after table by severity for each tool.
+- [x] Every failed finding is triaged: fix now, fix later, accepted risk (with reason) or could not evaluate (with reason). _(buckets confirmed 2026-11-20; see `report/checkov-triage-draft.md` Decisions and `report/audit-report.md`)_
+- [x] Critical and high project 1 findings fixed (or explained), one commit per check ID in the project 1 repo. _(the only critical is account level; each project 1 high is fixed, accepted or fix later, with a reason. Fixes are one commit per change, listed in the report)_
+- [x] After scans saved; the report has a before/after table by severity for each tool. _(`reports/2026-11-20-after/`; Checkov severities are matched or judged, the report says which)_
 - [ ] `report/audit-report.md` and PDF: summary page, findings by severity, fixes, accepted risks, method and limits; account details redacted.
 - [x] `report/TEMPLATE.md` exists for client jobs. _(committed `238a98f`)_
 - [ ] No access keys, account IDs or raw scan output committed; staging destroyed after the scans.
-- [ ] README has scope, how to grant access, how to run the scans, the before/after table and links to the report.
+- [x] README has scope, how to grant access, how to run the scans, the before/after table and links to the report. _(updated 2026-11-20)_

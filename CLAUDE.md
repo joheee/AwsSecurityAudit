@@ -236,10 +236,15 @@ second scan" story clearer.
   apply roles (by design), the prod container-insights log group and
   `RDSOSMetrics` log group, (the 4 automated RDS snapshots of the staging DB that were still listed
   right after the destroy were gone when rechecked on 2026-11-20).
-- Still to do, in order: diff plan-JSON and directory failures; the user's
-  decisions on the proposed buckets; re-measure the owner split from both
-  CSVs; before/after tables, report, PDF, `TEMPLATE.md`, README results;
-  delete the saved plan files in `reports/`.
+- Triage is done and confirmed (2026-11-20): plan versus directory diff and
+  owner split are in `report/checkov-triage-draft.md`; all buckets decided
+  (Decisions 5 to 11 there). `report/audit-report.md` (draft), `TEMPLATE.md`
+  and the README results are written and committed.
+- Still to do: PDF of the report (check pandoc and a PDF engine are
+  installed; make it only once the report text is final); a final read of the
+  report; a check of the whole git history for account IDs, keys and raw scan
+  output before ticking the "no secrets committed" box; delete the saved plan
+  files in `reports/` (they hold the account ID).
 - `reports/` holds saved plan files (`policy-*.tfplan`, `confused-deputy.tfplan`,
   `*.tfplan`). The 2026-11-19 ones are used up. They contain the account ID and
   are git-ignored. Delete them when the work is done.

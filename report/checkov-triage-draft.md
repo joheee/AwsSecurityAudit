@@ -92,6 +92,28 @@ rest are identical.
 Updated tally for the Terraform directory scan: Fix now 4, Fix later 1,
 Accepted 13 (unchanged). Plus one hand-found fix (action SHA pinning).
 
+## Decisions (2026-11-20)
+
+5. Prod apply role: leave as is, report it (decided 2026-11-19).
+6. Account-level fixes (S3 account public access block, IAM password policy)
+   and the default NACL are recommendations, not changes (agreed 2026-11-19).
+7. CI apply role (`iam_inline_policy_allows_privilege_escalation`, staging and
+   prod): **Accepted risk**. Staging narrowed but still flagged, prod unchanged.
+8. Project 1 default network ACL (3 rows): **Accepted**.
+9. Project 1 state bucket (9 rows): versioning and the TLS-only policy **Fix
+   later**, the other 7 **Accepted**.
+10. Overall rating: **moderate** for the audited stack, account level needs
+    attention.
+
+11. The nine remaining proposed buckets were confirmed as listed on 2026-11-20:
+    no AWS Backup plan (Accepted), RDS-managed secret policy (Accepted, partly
+    could-not-evaluate), `s3_bucket_cross_account_access` on the ALB log bucket
+    (Accepted), RDS Extended Support (Fix later), Network Firewall and VPC
+    endpoint (Accepted), the other ALB log bucket rows (Accepted), `RDSOSMetrics`
+    (Accepted), blocking log mode (Accepted), default port 5432 (Accepted).
+    This resolves the "to confirm" rows; the Prowler triage tables above that
+    still say "proposed" are superseded by the Decisions lists.
+
 ---
 
 # Prowler baseline triage (draft)
