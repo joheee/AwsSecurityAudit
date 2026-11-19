@@ -253,9 +253,9 @@ Next, in order:
 3. (Done 2026-11-20) Final read of `report/audit-report.md` (wording fixes in
    `f110843`), then the PDF with `report/make-pdf.sh` (`36023e4`).
 4. (Done 2026-11-20) History check passed and the "no secrets committed" box
-   is ticked. The 14 saved plan files directly in `reports/` were deleted;
-   `reports/2026-11-17-plan/staging-plan.json` (an early test plan, holds the
-   account ID, git-ignored) is still there.
+   is ticked. The 14 saved plan files directly in `reports/` and the early
+   test plan `reports/2026-11-17-plan/staging-plan.json` were deleted; no plan
+   file is left under `reports/`.
 5. (Done 2026-11-20) the 4 automated RDS snapshots of the staging DB were gone
    when rechecked; only `ecs-foundation-prod-final` remains.
 

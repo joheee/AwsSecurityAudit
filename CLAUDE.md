@@ -248,9 +248,9 @@ second scan" story clearer.
 - All Definition-of-done boxes are ticked (2026-11-20). The history check ran
   in bash over all 28 commits with positive controls: clean (a first attempt
   in zsh gave false "none" results because zsh does not split an unquoted
-  variable; always run such scans with `bash` and show git errors). The 14
-  plan files in `reports/` were deleted; `reports/2026-11-17-plan/staging-plan.json`
-  (git-ignored, holds the account ID) remains.
+  variable; always run such scans with `bash` and show git errors). All plan
+  files under `reports/` were deleted (the 14 saved plans and the early test
+  plan); the empty `reports/2026-11-17-plan/` folder remains.
 - Open for the owner: the commit author e-mail is in this file and in every
   commit's metadata; GitHub's `noreply` address would avoid it going forward.
   CI shellchecks only `scans/*.sh`, so `report/make-pdf.sh` is not covered by
